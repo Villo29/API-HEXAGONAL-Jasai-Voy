@@ -37,11 +37,11 @@ app.post('/api/pago', async (req: Request, res: Response) => {
     const preferenceData = {
       ...req.body,
       back_urls: {
-        success: 'https://a949-200-63-41-50.ngrok-free.app/success',
-        failure: 'https://a949-200-63-41-50.ngrok-free.app/failure',
-        pending: 'https://a949-200-63-41-50.ngrok-free.app/pending'
+        success: 'https://1a5f-177-231-71-28.ngrok-free.app/success',
+        failure: 'https://1a5f-177-231-71-28.ngrok-free.app/failure',
+        pending: 'https://1a5f-177-231-71-28.ngrok-free.app/pending'
       },
-      notification_url: 'https://a949-200-63-41-50.ngrok-free.app/api/webhook'
+      notification_url: 'https://1a5f-177-231-71-28.ngrok-free.app/api/webhook'
     };
     //console.log('Recibido preferenceData:', preferenceData);
 
@@ -59,7 +59,7 @@ app.post('/api/pago', async (req: Request, res: Response) => {
     }
 
     const preference = preferenceResponse.data;
-    console.log('Respuesta de la preferencia:', preference);
+    // console.log('Respuesta de la preferencia:', preference);
 
     // Devolver la respuesta al cliente con el link de pago válido
     return res.json({
@@ -90,12 +90,18 @@ app.post('/api/webhook', async (req: Request, res: Response) => {
     console.log('Recibida notificación:', notificacion);
 
     // Guardar la notificación en la base de datos si los datos no son nulos
-    if (notificacion && notificacion.resource && notificacion.topic) {
+    if (notificacion && notificacion.topic) {
       const nuevaNotificacion = new Notification({
-        resource: notificacion.resource,
+        action: notificacion.action || null,
+        api_version: notificacion.api_version || null,
+        data: notificacion.data ? { id: notificacion.data.id } : null,
+        date_created: notificacion.date_created || null,
+        resource: notificacion.resource || null,
         topic: notificacion.topic,
-        data: notificacion.data || null,
-        date_created: notificacion.date_created || null
+        id: notificacion.id || null,
+        live_mode: notificacion.live_mode || null,
+        type: notificacion.type || null,
+        user_id: notificacion.user_id || null
       });
       await nuevaNotificacion.save();
       console.log('Notificación guardada en la base de datos');

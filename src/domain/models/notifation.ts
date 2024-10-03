@@ -1,17 +1,29 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 interface INotification extends Document {
-    resource: string;
-    topic: string;
-    data: any;
-    date_created: Date | null;
+    action: string;
+    api_version: string;
+    data: {
+        id: string;
+    };
+    date_created: Date;
+    id: number;
+    live_mode: boolean;
+    type: string;
+    user_id: string;
 }
 
 const NotificationSchema: Schema = new Schema({
-    resource: { type: String, required: true },
-    topic: { type: String, required: true },
-    data: { type: Schema.Types.Mixed, default: null },
-    date_created: { type: Date, default: null }
+    action: { type: String, required: true },
+    api_version: { type: String, required: true },
+    data: {
+        id: { type: String, required: true }
+    },
+    date_created: { type: Date, required: true },
+    id: { type: Number, required: true, unique: true },
+    live_mode: { type: Boolean, required: true },
+    type: { type: String, required: true },
+    user_id: { type: String, required: true }
 });
 
 const Notification = mongoose.model<INotification>('Notification', NotificationSchema);

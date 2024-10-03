@@ -2,21 +2,25 @@ import { Request, Response } from 'express';
 import Notification from '../../domain/models/notifation';
 
 export class NotificationController {
-    constructor() { }
+    constructor() {}
 
     // Crear una nueva notificación si los datos no son nulos
     createNotification = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { action, api_version, data, date_created, id, live_mode, type, user_id } = req.body;
 
-            if (!action || !api_version || !data || !date_created || !id || !live_mode || !type || !user_id) {
-                return res.status(400).json({ message: 'Todos los campos son obligatorios y no deben ser nulos' });
+            // Validar que los campos requeridos no sean nulos
+            if (!action || !api_version || !data?.id || !date_created || !id || live_mode === undefined || !type || !user_id) {
+                return res.status(400).json({ message: 'Todos los campos obligatorios deben ser proporcionados y no deben ser nulos' });
             }
+
+            // Verificar si la notificación ya existe
             const existingNotification = await Notification.findOne({ notification_id: id });
             if (existingNotification) {
                 return res.status(400).json({ message: 'La notificación ya existe en la base de datos' });
             }
 
+            // Crear una nueva notificación con los datos proporcionados
             const newNotification = new Notification({
                 action,
                 api_version,
