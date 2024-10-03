@@ -1,28 +1,27 @@
 import { Request, Response } from "express";
-import { ObjectId } from "mongodb";
-import Usuario, { IUsuario } from "../../domain/models/usuario";
+import Chofer, { IChofer } from "../../domain/models/chofer";
 import jwt from "jsonwebtoken";
 
 // Crear un nuevo usuario
 export const crearUsuario = async (req: Request, res: Response) => {
   try {
-    const usuario = new Usuario(req.body);
-    await usuario.save();
+    const usuarioC = new Chofer(req.body);
+    await usuarioC.save();
     const token = jwt.sign(
-      { _id: usuario._id },
+      { _id: usuarioC._id },
       process.env.JWT_SECRET || "your_secret_key"
     );
-    res.status(201).send({ usuario, token });
+    res.status(201).send({ usuarioC, token });
   } catch (error) {
     res.status(400).send(error);
   }
 };
 
 //Vlidacion de usuario usando JWT
-export const loginUsuario = async (req: Request, res: Response) => {
+export const loginChofer = async (req: Request, res: Response) => {
   try {
     const { correo, contrasena } = req.body;
-    const usuario = await Usuario.findOne({ correo });
+    const usuario = await Chofer.findOne({ correo });
     if (!usuario || usuario.contrasena !== contrasena) {
       return res.status(401).send({ error: "Credenciales no válidas." });
     }
@@ -39,7 +38,7 @@ export const loginUsuario = async (req: Request, res: Response) => {
 // Obtener todos los usuarios
 export const obtenerUsuarios = async (req: Request, res: Response) => {
   try {
-    const usuarios = await Usuario.find({});
+    const usuarios = await Chofer.find({});
     res.status(200).send(usuarios);
   } catch (error) {
     res.status(500).send(error);
@@ -50,7 +49,7 @@ export const obtenerUsuarios = async (req: Request, res: Response) => {
 export const obtenerUsuarioPorId = async (req: Request, res: Response) => {
   const _id = req.params.id;
   try {
-    const usuario = await Usuario.findById(_id);
+    const usuario = await Chofer.findById(_id);
     if (!usuario) {
       return res.status(404).send();
     }
@@ -62,8 +61,8 @@ export const obtenerUsuarioPorId = async (req: Request, res: Response) => {
 
 // Actualizar un usuario por ID
 export const actualizarUsuario = async (req: Request, res: Response) => {
-  const updates = Object.keys(req.body) as Array<keyof IUsuario>;
-  const allowedUpdates: Array<keyof IUsuario> = [
+  const updates = Object.keys(req.body) as Array<keyof IChofer>;
+  const allowedUpdates: Array<keyof IChofer> = [
     "nombre",
     "correo",
     "contrasena",
@@ -78,7 +77,7 @@ export const actualizarUsuario = async (req: Request, res: Response) => {
   }
 
   try {
-    const usuario = await Usuario.findById(req.params.id);
+    const usuario = await Chofer.findById(req.params.id);
     if (!usuario) {
       return res.status(404).send({ error: "Usuario no encontrado" });
     }
@@ -96,7 +95,7 @@ export const actualizarUsuario = async (req: Request, res: Response) => {
 // Eliminar un usuario por ID
 export const eliminarUsuario = async (req: Request, res: Response) => {
   try {
-    const usuario = await Usuario.findByIdAndDelete(req.params.id);
+    const usuario = await Chofer.findByIdAndDelete(req.params.id);
     if (!usuario) {
       return res.status(404).send();
     }

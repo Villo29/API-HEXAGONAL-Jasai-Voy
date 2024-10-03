@@ -1,16 +1,17 @@
 import { Document, Schema, model } from 'mongoose';
 
 // Definir la interfaz para el modelo Usuario
-export interface IUsuario extends Document {
+export interface IChofer extends Document {
     nombre: string;
     correo: string;
     contrasena: string;
     telefono: string;
+    curp: string;
 
 }
 
 // Definir el esquema para el modelo Usuario
-const choferSchema = new Schema<IUsuario>({
+const choferSchema = new Schema<IChofer>({
     nombre: {
         type: String,
         required: true,
@@ -31,6 +32,6 @@ const choferSchema = new Schema<IUsuario>({
 });
 
 
-const Usuario = model<IUsuario>('Chofer', choferSchema);
+const Chofer = model<IChofer>('Chofer', choferSchema);
 
-export default Usuario;
+export default Chofer;
