@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import router from '../adapters/routes/router';
+import router from '../adapters/routes/index'
 
 dotenv.config();
 
@@ -22,6 +22,11 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api', router);
+
+app.get('/', (req, res) => {
+  res.send('API is working!');
+});
+
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
