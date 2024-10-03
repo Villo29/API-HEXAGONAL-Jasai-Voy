@@ -1,31 +1,13 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
-interface Item {
-    id: string;
-    title: string;
-    quantity: number;
-    unit_price: number;
-    currency_id?: string;
-}
-
-interface Payer {
-    email: string;
-    name: string;
-    surname: string;
-    identification: {
-        type: string;
-        number: string;
-    };
-}
-
 class PaymentProcessor {
     private client: MercadoPagoConfig;
     private preference: Preference;
 
     constructor() {
-        // Inicializa el SDK de Mercado Pago con el Access Token usando MercadoPagoConfig
+        // Inicializa el SDK de Mercado Pago con el Access Token
         this.client = new MercadoPagoConfig({
-            accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '', // Asegúrate de usar el token correcto de producción o sandbox
+            accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '', // Asegúrate de usar el token correcto
             options: { timeout: 5000 },  // Opciones adicionales
         });
 
@@ -33,29 +15,43 @@ class PaymentProcessor {
         this.preference = new Preference(this.client);
     }
 
-    // Método para crear un pago y devolver el link del 'init_point'
-    async createPayment(items: Item[], payer: Payer, description: string | null = null): Promise<{ init_point: string }> {
-        // Crear la preferencia de pago
-        const base_url = process.env.BASE_URL as string;
+    // Método para crear un pago con valores predeterminados y devolver el link del 'init_point'
+    async createPayment(): Promise<{ init_point: string }> {
+        // Valores predeterminados
+        const items = [
+            {
+                title: 'Producto predeterminado',
+                quantity: 1,
+                unit_price: 100,  // Precio predeterminado
+                currency_id: 'MXN',  // Moneda predeterminada
+            }
+        ];
+
+        const payer = {
+            email: 'example@example.com',
+            name: 'Nombre Predeterminado',
+            surname: 'Apellido Predeterminado',
+            identification: {
+                type: 'DNI',
+                number: '12345678',
+            }
+        };
+
+        // Crear la preferencia de pago con valores predeterminados
         const preferenceData = {
             items,
             payer,
-            back_urls: {
-                success: `${base_url}/payments/success`,
-                failure: `${base_url}/payments/failure`,
-                pending: `${base_url}/payments/pending`,
-            },
             auto_return: 'approved',
             external_reference: 'reference_from_system', // Puedes poner una referencia que quieras
             metadata: {
-                description: description || 'Descripción del pago',
+                description: 'Pago por el producto predeterminado',
             },
         };
 
         try {
-            // Crear la preferencia en Mercado Pago usando el nuevo SDK
+            // Crear la preferencia en Mercado Pago
             const preferenceResponse = await this.preference.create({ body: preferenceData });
-            const preference = preferenceResponse as any; // Adjust the type if necessary
+            const preference = preferenceResponse.body;
 
             // Devolver el link del pago (init_point)
             return {
