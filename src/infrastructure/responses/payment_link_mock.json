@@ -1,0 +1,6 @@
+{
+  "init_point": "https://www.mercadopago.com/checkout/v1/payment-link/ajohkonez1m",
+  "success_url": "http://localhost:3029/success",
+  "notification_url": "http://localhost:3029/api/webhook",
+  "preference_id": "mock_preference_id"
+}
