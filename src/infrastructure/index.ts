@@ -1,7 +1,5 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import router from '../adapters/routes/index';
@@ -32,7 +30,7 @@ app.use(cors());
 app.use(express.json());
 
 // Ruta para procesar el pago
-app.post('/api/pago', async (req: Request, res: Response) => {
+app.post('/api/v1/pago', async (req: Request, res: Response) => {
   try {
     const preferenceData = {
       ...req.body,
