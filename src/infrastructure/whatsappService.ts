@@ -32,7 +32,7 @@ export class WhatsAppService implements MessageRepository {
                     },
                 }
             );
-        } catch (error) {w
+        } catch (error) {
             const err = error as any;
             console.error('Failed to send message', err.response?.data || err.message);
             throw new Error('Failed to send message');
