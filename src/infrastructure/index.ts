@@ -6,6 +6,7 @@ import router from '../adapters/routes/index';
 import axios from 'axios';
 import messageRoutes from '../adapters/routes/messageRoutes';
 import Notification from '../domain/models/notifation';
+import smsRoutes from '../adapters/routes/sms.Routes';
 
 dotenv.config();
 
@@ -168,7 +169,7 @@ app.post('/api/webhook', async (req: Request, res: Response) => {
 // Rutas adicionales
 app.use('/api', router);
 
-
+app.use('/api/messages', smsRoutes);
 
 app.use('/api/messages', messageRoutes);
 
