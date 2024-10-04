@@ -4,27 +4,31 @@ interface INotification extends Document {
     action: string;
     api_version: string;
     data: {
-        id: string;
+        id: string | null;
     };
-    date_created: Date;
-    id: number;
-    live_mode: boolean;
-    type: string;
-    user_id: string;
+    date_created: Date | null;
+    resource?: string;
+    topic: string;
+    id: number | null;
+    live_mode: boolean | null;
+    type: string | null;
 }
 
 const NotificationSchema: Schema = new Schema({
     action: { type: String, required: true },
     api_version: { type: String, required: true },
     data: {
-        id: { type: String, required: true }
+        id: { type: String, default: null }
     },
-    date_created: { type: Date, required: true },
-    id: { type: Number, required: true, unique: true },
-    live_mode: { type: Boolean, required: true },
-    type: { type: String, required: true },
-    user_id: { type: String, required: true }
+    date_created: { type: Date, default: null },
+    resource: { type: String },
+    topic: { type: String, required: true },
+    id: { type: Number, default: null },
+    live_mode: { type: Boolean, default: null },
+    type: { type: String, default: null }
 });
+
+NotificationSchema.index({ id: 1 }, { unique: true, partialFilterExpression: { id: { $type: 'number' } } });
 
 const Notification = mongoose.model<INotification>('Notification', NotificationSchema);
 

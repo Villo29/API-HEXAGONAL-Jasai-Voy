@@ -37,13 +37,13 @@ app.post('/api/pago', async (req: Request, res: Response) => {
     const preferenceData = {
       ...req.body,
       back_urls: {
-        success: 'https://1a5f-177-231-71-28.ngrok-free.app/success',
-        failure: 'https://1a5f-177-231-71-28.ngrok-free.app/failure',
-        pending: 'https://1a5f-177-231-71-28.ngrok-free.app/pending'
+        success: 'https://3a38-177-231-71-28.ngrok-free.app/success',
+        failure: 'https://3a38-177-231-71-28.ngrok-free.app/failure',
+        pending: 'https://3a38-177-231-71-28.ngrok-free.app/pending'
       },
-      notification_url: 'https://1a5f-177-231-71-28.ngrok-free.app/api/webhook'
+      notification_url: 'https://3a38-177-231-71-28.ngrok-free.app/api/webhook'
     };
-    //console.log('Recibido preferenceData:', preferenceData);
+    console.log('Recibido preferenceData:', preferenceData);
 
     // Crea una preferencia de pago usando la API de Mercado Pago
     const preferenceResponse = await axios.post('https://api.mercadopago.com/checkout/preferences', preferenceData, {
@@ -59,7 +59,7 @@ app.post('/api/pago', async (req: Request, res: Response) => {
     }
 
     const preference = preferenceResponse.data;
-    // console.log('Respuesta de la preferencia:', preference);
+    console.log('Respuesta de la preferencia:', preference);
 
     // Devolver la respuesta al cliente con el link de pago válido
     return res.json({
@@ -91,20 +91,31 @@ app.post('/api/webhook', async (req: Request, res: Response) => {
 
     // Guardar la notificación en la base de datos si los datos no son nulos
     if (notificacion && notificacion.topic) {
-      const nuevaNotificacion = new Notification({
-        action: notificacion.action || null,
-        api_version: notificacion.api_version || null,
-        data: notificacion.data ? { id: notificacion.data.id } : null,
-        date_created: notificacion.date_created || null,
-        resource: notificacion.resource || null,
-        topic: notificacion.topic,
-        id: notificacion.id || null,
-        live_mode: notificacion.live_mode || null,
-        type: notificacion.type || null,
-        user_id: notificacion.user_id || null
-      });
-      await nuevaNotificacion.save();
-      console.log('Notificación guardada en la base de datos');
+      // Asegurarse de que todos los campos estén presentes antes de guardar
+      setTimeout(async () => {
+        const nuevaNotificacion = {
+          action: notificacion.action || null,
+          api_version: notificacion.api_version || null,
+          data: { id: notificacion.data && notificacion.data.id ? notificacion.data.id : null },
+          date_created: notificacion.date_created || null,
+          resource: notificacion.resource || null,
+          topic: notificacion.topic,
+          id: notificacion.id || null,
+          live_mode: notificacion.live_mode !== undefined ? notificacion.live_mode : null,
+          type: notificacion.type || null
+        };
+
+        try {
+          await Notification.updateOne({ id: notificacion.id }, nuevaNotificacion, { upsert: true });
+          console.log('Notificación guardada en la base de datos');
+        } catch (error: any) {
+          if (error.code === 11000) {
+            console.warn('Notificación duplicada, no se guardará nuevamente');
+          } else {
+            console.error('Error al guardar la notificación:', error);
+          }
+        }
+      }, 1000); // Esperar 1 segundo para asegurarse de que los datos estén completos
     }
 
     // Verificamos si el evento es de un pago
@@ -153,6 +164,7 @@ app.post('/api/webhook', async (req: Request, res: Response) => {
     }
   }
 });
+
 
 // Rutas adicionales
 app.use('/api', router);
