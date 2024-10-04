@@ -4,6 +4,7 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import router from '../adapters/routes/index';
 import axios from 'axios';
+import messageRoutes from '../adapters/routes/messageRoutes';
 import Notification from '../domain/models/notifation';
 
 dotenv.config();
@@ -167,9 +168,9 @@ app.post('/api/webhook', async (req: Request, res: Response) => {
 // Rutas adicionales
 app.use('/api', router);
 
-app.get('/', (req, res) => {
-  res.send('API is working!');
-});
+
+
+app.use('/api/messages', messageRoutes);
 
 // Iniciar el servidor
 app.listen(port, () => {

@@ -13,7 +13,7 @@ export class UserController {
       const usuario = new Usuario(req.body);
       await usuario.save();
       const token = jwt.sign({ _id: usuario._id }, process.env.JWT_SECRET || 'your_secret_key');
-      res.status(201).send({ usuario, token });
+      res.status(201).send({ token, nombre: usuario.nombre });
     } catch (error) {
       res.status(400).send(error);
     }
