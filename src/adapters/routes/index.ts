@@ -3,7 +3,7 @@ import choferRoutes from './chofer.routes';
 import usuariosRoutes from './usuarios.routes';
 import unidadRoutes from './unidad.routes';
 import nofificationRoutes from './notification.routes';
-
+import  whatsappRoutes from './whatsapp.Routes';
 
 const router = express.Router();
 
@@ -19,7 +19,7 @@ router.use(`${apiVersion}/unidades`, unidadRoutes);
 
 router.use(`${apiVersion}/notifications`, nofificationRoutes);
 
-
+router.use(`${apiVersion}/send-whatsapp`, whatsappRoutes);
 
 
 export default router;

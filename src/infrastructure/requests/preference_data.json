@@ -1,15 +1,4 @@
-{
-  "items": [
-    {
-      "title": "Producto de ejemplo",
-      "quantity": 1,
-      "unit_price": 15,
-      "currency_id": "MXN"
-    }
-  ],
-  "payer": {
-    "email": "test_user_123456@testuser.com"
-  },
+,
   "description": "Pago de prueba",
   "back_urls": {
     "success": "http://localhost:3029/success",

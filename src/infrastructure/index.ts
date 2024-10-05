@@ -4,9 +4,8 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import router from '../adapters/routes/index';
 import axios from 'axios';
-import messageRoutes from '../adapters/routes/messageRoutes';
 import Notification from '../domain/models/notifation';
-import smsRoutes from '../adapters/routes/sms.Routes';
+
 
 dotenv.config();
 
@@ -37,11 +36,11 @@ app.post('/api/v1/pago', async (req: Request, res: Response) => {
     const preferenceData = {
       ...req.body,
       back_urls: {
-        success: 'https://3a38-177-231-71-28.ngrok-free.app/success',
-        failure: 'https://3a38-177-231-71-28.ngrok-free.app/failure',
-        pending: 'https://3a38-177-231-71-28.ngrok-free.app/pending'
+        success: 'https://1384-201-162-232-45.ngrok-free.app/success',
+        failure: 'https://1384-201-162-232-45.ngrok-free.app/failure',
+        pending: 'https://1384-201-162-232-45.ngrok-free.app/pending'
       },
-      notification_url: 'https://3a38-177-231-71-28.ngrok-free.app/api/webhook'
+      notification_url: 'https://1384-201-162-232-45.ngrok-free.app/api/webhook'
     };
     console.log('Recibido preferenceData:', preferenceData);
 
@@ -169,9 +168,7 @@ app.post('/api/webhook', async (req: Request, res: Response) => {
 // Rutas adicionales
 app.use('/api', router);
 
-app.use('/api/messages', smsRoutes);
 
-app.use('/api/messages', messageRoutes);
 
 // Iniciar el servidor
 app.listen(port, () => {
