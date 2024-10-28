@@ -1,9 +1,0 @@
-,
-  "description": "Pago de prueba",
-  "back_urls": {
-    "success": "http://localhost:3029/success",
-    "failure": "http://localhost:3029/failure",
-    "pending": "http://localhost:3029/pending"
-  },
-  "notification_url": "http://localhost:3029/api/webhook"
-}

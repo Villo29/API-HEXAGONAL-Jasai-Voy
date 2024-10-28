@@ -1,5 +1,4 @@
-import { Message } from '../models/message'; // Adjust the import path as necessary
-
+import { Message } from '../models/message';
 export interface MessageRepository {
     sendMessage(message: Message): Promise<void>;
 }

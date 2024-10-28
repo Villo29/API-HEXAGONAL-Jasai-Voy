@@ -2,7 +2,7 @@ import express from 'express';
 import choferRoutes from './chofer.routes';
 import usuariosRoutes from './usuarios.routes';
 import unidadRoutes from './unidad.routes';
-import nofificationRoutes from './notification.routes';
+import nofificationRoutes from './mercadoPago.routes';
 import  whatsappRoutes from './whatsapp.routes';
 
 const router = express.Router();

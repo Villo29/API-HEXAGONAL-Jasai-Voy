@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { sendWhatsAppMessage } from '../../application/services/twilioService';
+import { sendWhatsAppMessage } from '../../services/twilioService';
 
 export const sendWhatsAppController = async (req: Request, res: Response) => {
     const { to, body } = req.body;

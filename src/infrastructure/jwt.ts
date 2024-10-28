@@ -7,7 +7,7 @@ if (!secret) {
 }
 
 export const generateToken = (payload: object) => {
-  return jwt.sign(payload, secret, { expiresIn: '1h' });
+  return jwt.sign(payload, secret);
 };
 
 export const verifyToken = (token: string) => {
