@@ -7,6 +7,7 @@ export interface IUsuario extends Document {
     contrasena: string;
     telefono: string;
     codigoVerificacion: string;
+    fechaOperacion?: Date;
 }
 
 // Definir el esquema para el modelo Usuario
@@ -31,8 +32,16 @@ const usuarioSchema = new Schema<IUsuario>({
     codigoVerificacion: {
         type: String,
         required: true,
+    },
+    fechaOperacion: {
+        type: Date,
+        default: Date.now
     }
-}, {
+});
+
+usuarioSchema.pre<IUsuario>('save', function (next) {
+    this.fechaOperacion = new Date();
+    next();
 });
 
 // Definir el modelo Usuario
