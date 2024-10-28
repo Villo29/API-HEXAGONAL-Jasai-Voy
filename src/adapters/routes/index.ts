@@ -22,4 +22,5 @@ router.use(`${apiVersion}/notifications`, nofificationRoutes);
 router.use(`${apiVersion}/send-whatsapp`, whatsappRoutes);
 
 
+
 export default router;
