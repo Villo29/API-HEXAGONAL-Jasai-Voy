@@ -1,10 +1,8 @@
 import { Request, Response } from 'express';
-import Usuario, { IUsuario } from '../../domain/models/usuario';
+import Usuario from '../../domain/models/usuario'; // Sequelize Model importado
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
-
-
 
 export class UserController {
     constructor() { }
@@ -14,24 +12,22 @@ export class UserController {
         try {
             const { nombre, correo, contrasena, telefono } = req.body;
 
-            const correoExistente = await Usuario.findOne({ correo });
+            const correoExistente = await Usuario.findOne({ where: { correo } });
             if (correoExistente) {
                 return res.status(400).json({ error: 'El correo ya está en uso.' });
             }
 
-            const codigoVerificacion = crypto.randomBytes(3).toString('hex');
-            const usuario = new Usuario({
+            const codigo_verificacion = crypto.randomBytes(3).toString('hex');
+            const usuario = await Usuario.create({
                 nombre,
                 correo,
                 contrasena,
                 telefono,
-                codigoVerificacion,
+                codigo_verificacion,
             });
 
-            await usuario.save();
-
             const token = jwt.sign(
-                { _id: usuario._id },
+                { id: usuario.id },
                 process.env.JWT_SECRET || 'your_secret_key'
             );
 
@@ -47,12 +43,12 @@ export class UserController {
                 from: '221263@ids.upchiapas.edu.mx',
                 to: correo,
                 subject: '¡Bienvenido a nuestra plataforma!',
-                text: `¡Hola ${nombre}!, tu código de verificación es: ${codigoVerificacion}`,
+                text: `¡Hola ${nombre}!, tu código de verificación es: ${codigo_verificacion}`,
                 html: `<div style="text-align: center; font-family: Arial, sans-serif;">
                             <h1>¡Hola ${nombre}!</h1>
                             <p>Gracias por unirte a nuestra plataforma. Tu código de verificación es:</p>
                             <div style="display: inline-block; padding: 10px; border: 2px solid #000; border-radius: 5px;">
-                                <h2>${codigoVerificacion}</h2>
+                                <h2>${codigo_verificacion}</h2>
                             </div>
                         </div>`,
             };
@@ -70,30 +66,31 @@ export class UserController {
     loginUsuario = async (req: Request, res: Response) => {
         try {
             const { correo, contrasena } = req.body;
-            const usuario = await Usuario.findOne({ correo });
+            const usuario = await Usuario.findOne({ where: { correo } });
 
             if (!usuario || usuario.contrasena !== contrasena) {
                 return res.status(401).send({ error: 'Credenciales no válidas.' });
             }
 
-            usuario.fechaOperacion = new Date();
+            usuario.fecha_operacion	 = new Date();
             await usuario.save();
 
-            const token = jwt.sign({ _id: usuario._id }, process.env.JWT_SECRET || 'your_secret_key');
+            const token = jwt.sign({ id: usuario.id }, process.env.JWT_SECRET || 'your_secret_key');
             res.send({ usuario, token });
         } catch (error) {
             res.status(400).send(error);
         }
     };
+
     obtenerUsuarioPorId = async (req: Request, res: Response) => {
-        const _id = req.params.id;
+        const id = req.params.id;
         try {
-            const usuario = await Usuario.findById(_id);
+            const usuario = await Usuario.findByPk(id);
             if (!usuario) {
                 return res.status(404).send({ error: 'Usuario no encontrado' });
             }
 
-            usuario.fechaOperacion = new Date();
+            usuario.fecha_operacion	 = new Date();
             await usuario.save();
 
             res.status(200).send(usuario);
@@ -102,18 +99,16 @@ export class UserController {
         }
     };
 
-
     actualizarUsuario = async (req: Request, res: Response) => {
-        const updates = Object.keys(req.body) as Array<keyof IUsuario>;
-        const allowedUpdates: Array<keyof IUsuario> = ['nombre', 'correo', 'contrasena', 'telefono'];
-        const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
-
+        const updates = Object.keys(req.body) as Array<keyof typeof Usuario>;
+        const allowedUpdates: Array<keyof Usuario> = ['nombre', 'correo', 'contrasena', 'telefono'];
+        const isValidOperation = updates.every((update) => allowedUpdates.includes(update as keyof Usuario));
         if (!isValidOperation) {
             return res.status(400).send({ error: 'Actualización no permitida' });
         }
 
         try {
-            const usuario = await Usuario.findById(req.params.id);
+            const usuario = await Usuario.findByPk(req.params.id);
             if (!usuario) {
                 return res.status(404).send({ error: 'Usuario no encontrado' });
             }
@@ -121,7 +116,7 @@ export class UserController {
             updates.forEach((update) => {
                 (usuario as any)[update] = req.body[update];
             });
-            usuario.fechaOperacion = new Date();  // Registrar la fecha y hora de la actualización
+            usuario.fecha_operacion	 = new Date();  // Registrar la fecha y hora de la actualización
             await usuario.save();
             res.status(200).send(usuario);
         } catch (error) {
@@ -129,17 +124,14 @@ export class UserController {
         }
     };
 
-    // Eliminar un usuario por ID (opcionalmente registra la operación)
     eliminarUsuario = async (req: Request, res: Response) => {
         try {
-            const usuario = await Usuario.findByIdAndDelete(req.params.id);
+            const usuario = await Usuario.findByPk(req.params.id);
             if (!usuario) {
                 return res.status(404).send();
             }
 
-            usuario.fechaOperacion = new Date();  // Registrar la fecha y hora de la eliminación
-            await usuario.save();
-
+            await usuario.destroy();
             res.status(200).send(usuario);
         } catch (error) {
             res.status(500).send(error);
@@ -147,14 +139,8 @@ export class UserController {
     };
 }
 
-
 export const crearUsuario = UserController.prototype.crearUsuario;
-
 export const obtenerUsuarioPorId = UserController.prototype.obtenerUsuarioPorId;
-
 export const actualizarUsuario = UserController.prototype.actualizarUsuario;
-
 export const eliminarUsuario = UserController.prototype.eliminarUsuario;
-
 export const loginUsuario = UserController.prototype.loginUsuario;
-
