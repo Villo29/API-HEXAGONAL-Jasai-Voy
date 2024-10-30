@@ -1,7 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../../infrastructure/database/db';
 
-// Definir la interfaz para el modelo Unidad (opcional para el tipado)
+
 export interface IUnidad {
     id?: number;
     placas: string;
@@ -12,7 +12,7 @@ export interface IUnidad {
     fecha_operacion?: Date;
 }
 
-// Definir el modelo Unidad
+
 class Unidad extends Model<IUnidad> implements IUnidad {
     public id!: number;
     public placas!: string;
@@ -23,7 +23,6 @@ class Unidad extends Model<IUnidad> implements IUnidad {
     public fecha_operacion!: Date;
 }
 
-// Inicializar el modelo Unidad con Sequelize
 Unidad.init(
     {
         id: {
@@ -57,10 +56,10 @@ Unidad.init(
         },
     },
     {
-        sequelize, // Conexión a la base de datos
+        sequelize,
         tableName: 'unidades',
         modelName: 'Unidad',
-        timestamps: false, // Desactivar las columnas createdAt y updatedAt
+        timestamps: false,
     }
 );
 

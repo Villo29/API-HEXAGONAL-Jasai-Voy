@@ -1,7 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
-import { sequelize } from '../../infrastructure/database/db'; // Asegúrate de que esta sea la conexión correcta a la base de datos
+import { sequelize } from '../../infrastructure/database/db';
 
-// Definir la interfaz para el modelo Usuario (opcional, pero útil)
+
 export interface IUsuario {
     id?: number;
     nombre: string;
@@ -12,7 +12,7 @@ export interface IUsuario {
     fecha_operacion	?: Date;
 }
 
-// Definir el modelo Usuario
+
 class Usuario extends Model<IUsuario> implements IUsuario {
     public id!: number;
     public nombre!: string;
@@ -23,7 +23,7 @@ class Usuario extends Model<IUsuario> implements IUsuario {
     public fecha_operacion	!: Date;
 }
 
-// Inicializar el modelo Usuario con Sequelize
+
 Usuario.init(
     {
         id: {
@@ -59,10 +59,10 @@ Usuario.init(
         },
     },
     {
-        sequelize, // Conexión a la base de datos
+        sequelize,
         tableName: 'usuarios',
         modelName: 'Usuario',
-        timestamps: false, // Desactiva las columnas `createdAt` y `updatedAt` si no las necesitas
+        timestamps: false,
     }
 );
 

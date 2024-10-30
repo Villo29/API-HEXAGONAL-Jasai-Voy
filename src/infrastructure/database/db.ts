@@ -4,13 +4,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const sequelize = new Sequelize(
-    process.env.MYSQL_DB || '', // Nombre de la base de datos
-    process.env.MYSQL_USER || '', // Usuario de la base de datos
-    process.env.MYSQL_PASSWORD || '', // Contraseña del usuario de la base de datos
+    process.env.MYSQL_DB || '',
+    process.env.MYSQL_USER || '',
+    process.env.MYSQL_PASSWORD || '',
     {
-        host: process.env.MYSQL_HOST || 'localhost', // Dirección del servidor de MySQL
-        dialect: 'mysql', // Dialecto que estamos utilizando (MySQL)
-        logging: false, // Desactivar el registro de las consultas SQL (opcional)
+        host: process.env.MYSQL_HOST || 'localhost',
+        dialect: 'mysql',
+        logging: false,
     }
 );
 
@@ -23,5 +23,5 @@ sequelize.authenticate()
         console.error('Error al conectar a la base de datos MySQL:', error);
     });
 
-// Exportar la conexión para usar en los modelos
+
 export default sequelize;

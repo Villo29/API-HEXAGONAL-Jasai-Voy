@@ -15,7 +15,6 @@ if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
     process.exit(1);
 }
 
-// Configuración de Sequelize para MySQL
 const sequelize = new Sequelize(process.env.MYSQL_DB || '', process.env.MYSQL_USER || '', process.env.MYSQL_PASSWORD || '', {
     host: process.env.MYSQL_HOST || 'localhost',
     dialect: 'mysql',
@@ -30,7 +29,7 @@ sequelize.authenticate()
     });
 
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
+    windowMs: 15 * 60 * 1000,
     max: 100,
     message: 'Demasiadas peticiones desde esta IP, por favor intenta nuevamente después de 15 minutos.'
 });

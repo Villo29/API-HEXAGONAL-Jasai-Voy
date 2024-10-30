@@ -1,29 +1,61 @@
-import mongoose from 'mongoose';
+import { DataTypes, Model } from 'sequelize';
+import { sequelize } from '../../infrastructure/database/db';
 
-const PaymentSchema = new mongoose.Schema({
-    payment_id: {
-        type: Number,
-        required: true,
-        unique: true
+
+export interface IPayment {
+    id?: number;
+    payment_id: number;
+    status_detail: string;
+    currency_id: string;
+    total_paid_amount: number;
+    date_created?: Date;
+}
+
+class Payment extends Model<IPayment> implements IPayment {
+    public id!: number;
+    public payment_id!: number;
+    public status_detail!: string;
+    public currency_id!: string;
+    public total_paid_amount!: number;
+    public date_created!: Date;
+}
+
+
+Payment.init(
+    {
+        id: {
+            type: DataTypes.INTEGER,
+            autoIncrement: true,
+            primaryKey: true,
+        },
+        payment_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            unique: true,
+        },
+        status_detail: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        currency_id: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        total_paid_amount: {
+            type: DataTypes.FLOAT,
+            allowNull: false,
+        },
+        date_created: {
+            type: DataTypes.DATE,
+            defaultValue: DataTypes.NOW,
+        },
     },
-    status_detail: {
-        type: String,
-        required: true
-    },
-    currency_id: {
-        type: String,
-        required: true
-    },
-    total_paid_amount: {
-        type: Number,
-        required: true
-    },
-    date_created: {
-        type: Date,
-        default: Date.now
+    {
+        sequelize, // Conexión a la base de datos
+        tableName: 'pagos',
+        modelName: 'Payment',
+        timestamps: false, // Desactivar las columnas createdAt y updatedAt
     }
-});
+);
 
-const PaymentModel = mongoose.model('Payment', PaymentSchema);
-
-export default PaymentModel;
+export default Payment;

@@ -1,80 +1,78 @@
 import { Request, Response } from "express";
-import Chofer, { IChofer } from "../../domain/models/chofer";
+import Chofer from "../../domain/models/chofer";
 import jwt from "jsonwebtoken";
-
-
 
 export class ChoferController {
   constructor() {}
 
-  // Crear un nuevo usuario
+  // Crear un nuevo chofer
   crearChofer = async (req: Request, res: Response) => {
     try {
-      const usuarioC = new Chofer(req.body);
-      await usuarioC.save();
+      const chofer = await Chofer.create(req.body);
       const token = jwt.sign(
-        { _id: usuarioC._id },
+        { id: chofer.id },
         process.env.JWT_SECRET || "your_secret_key"
       );
-      res.status(201).send({ usuarioC, token });
+      res.status(201).send({ chofer, token });
     } catch (error) {
       res.status(400).send(error);
     }
   };
 
-  //Vlidacion de usuario usando JWT
+  // Validación de chofer usando JWT
   loginChofer = async (req: Request, res: Response) => {
     try {
       const { correo, contrasena } = req.body;
-      const usuario = await Chofer.findOne({ correo });
-      if (!usuario || usuario.contrasena !== contrasena) {
+      const chofer = await Chofer.findOne({ where: { correo } });
+      if (!chofer || chofer.contrasena !== contrasena) {
         return res.status(401).send({ error: "Credenciales no válidas." });
       }
       const token = jwt.sign(
-        { _id: usuario._id },
+        { id: chofer.id },
         process.env.JWT_SECRET || "your_secret_key"
       );
-      res.send({ usuario, token });
+      res.send({ chofer, token });
     } catch (error) {
       res.status(400).send(error);
     }
   };
 
-  // Obtener todos los usuarios
-  obtenerchofer = async (req: Request, res: Response) => {
+  // Obtener todos los choferes
+  obtenerChoferes = async (req: Request, res: Response) => {
     try {
-      const usuarios = await Chofer.find({});
-      res.status(200).send(usuarios);
+      const choferes = await Chofer.findAll();
+      res.status(200).send(choferes);
     } catch (error) {
       res.status(500).send(error);
     }
   };
 
-  // Obtener un usuario por ID
+  // Obtener un chofer por ID
   obtenerChoferPorId = async (req: Request, res: Response) => {
-    const _id = req.params.id;
+    const id = req.params.id;
     try {
-      const usuario = await Chofer.findById(_id);
-      if (!usuario) {
-        return res.status(404).send();
+      const chofer = await Chofer.findByPk(id);
+      if (!chofer) {
+        return res.status(404).send({ error: "Chofer no encontrado" });
       }
-      res.status(200).send(usuario);
+      res.status(200).send(chofer);
     } catch (error) {
       res.status(500).send(error);
     }
   };
 
-  // Actualizar un usuario por ID
+  // Actualizar un chofer por ID
   actualizarChofer = async (req: Request, res: Response) => {
-    const updates = Object.keys(req.body) as Array<keyof IChofer>;
-    const allowedUpdates: Array<keyof IChofer> = [
+    const updates = Object.keys(req.body) as Array<keyof typeof Chofer>;
+    const allowedUpdates: Array<keyof Chofer> = [
       "nombre",
       "correo",
       "contrasena",
       "telefono",
+      "curp"
     ];
     const isValidOperation = updates.every((update) =>
-      allowedUpdates.includes(update)
+      allowedUpdates.includes(update as keyof Chofer)
     );
 
     if (!isValidOperation) {
@@ -82,41 +80,40 @@ export class ChoferController {
     }
 
     try {
-      const usuario = await Chofer.findById(req.params.id);
-      if (!usuario) {
-        return res.status(404).send({ error: "Usuario no encontrado" });
+      const chofer = await Chofer.findByPk(req.params.id);
+      if (!chofer) {
+        return res.status(404).send({ error: "Chofer no encontrado" });
       }
 
       updates.forEach((update) => {
-        (usuario as any)[update] = req.body[update];
+        (chofer as any)[update] = req.body[update];
       });
-      await usuario.save();
-      res.status(200).send(usuario);
+      await chofer.save();
+      res.status(200).send(chofer);
     } catch (error) {
       res.status(400).send(error);
     }
   };
 
-  // Eliminar un usuario por ID
+  // Eliminar un chofer por ID
   eliminarChofer = async (req: Request, res: Response) => {
     try {
-      const usuario = await Chofer.findByIdAndDelete(req.params.id);
-      if (!usuario) {
-        return res.status(404).send();
+      const chofer = await Chofer.findByPk(req.params.id);
+      if (!chofer) {
+        return res.status(404).send({ error: "Chofer no encontrado" });
       }
-      res.status(200).send(usuario);
+
+      await chofer.destroy();
+      res.status(200).send(chofer);
     } catch (error) {
       res.status(500).send(error);
     }
   };
 }
 
-
-
-
-export const crearChofer =  ChoferController.prototype.crearChofer;
+export const crearChofer = ChoferController.prototype.crearChofer;
 export const loginChofer = ChoferController.prototype.loginChofer;
-export const obtenerChofer = ChoferController.prototype.obtenerchofer;
+export const obtenerChoferes = ChoferController.prototype.obtenerChoferes;
 export const obtenerChoferPorId = ChoferController.prototype.obtenerChoferPorId;
 export const actualizarChofer = ChoferController.prototype.actualizarChofer;
 export const eliminarChofer = ChoferController.prototype.eliminarChofer;
