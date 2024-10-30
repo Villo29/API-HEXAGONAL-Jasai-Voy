@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Notification from '../../domain/models/notifation';
+import Payment from '../../domain/models/notifation';
 
 export class NotificationController {
     constructor() {}
@@ -7,76 +7,74 @@ export class NotificationController {
     // Crear una nueva notificación si los datos no son nulos
     createNotification = async (req: Request, res: Response): Promise<Response> => {
         try {
-            const { action, api_version, data, date_created, id, live_mode, type, user_id } = req.body;
+            const { payment_id, status_detail, currency_id, total_paid_amount, date_created } = req.body;
 
             // Validar que los campos requeridos no sean nulos
-            if (!action || !api_version || !data?.id || !date_created || !id || live_mode === undefined || !type || !user_id) {
+            if (!payment_id || !status_detail || !currency_id || !total_paid_amount) {
                 return res.status(400).json({ message: 'Todos los campos obligatorios deben ser proporcionados y no deben ser nulos' });
             }
 
-            // Verificar si la notificación ya existe
-            const existingNotification = await Notification.findOne({ notification_id: id });
-            if (existingNotification) {
-                return res.status(400).json({ message: 'La notificación ya existe en la base de datos' });
+            // Verificar si el pago ya existe
+            const existingPayment = await Payment.findOne({ where: { payment_id } });
+            if (existingPayment) {
+                return res.status(400).json({ message: 'El pago ya existe en la base de datos' });
             }
 
-            // Crear una nueva notificación con los datos proporcionados
-            const newNotification = new Notification({
-                action,
-                api_version,
-                data,
-                date_created,
-                notification_id: id,
-                live_mode,
-                type,
-                user_id
+            // Crear un nuevo pago con los datos proporcionados
+            const newPayment = await Payment.create({
+                payment_id,
+                status_detail,
+                currency_id,
+                total_paid_amount,
+                date_created: date_created || new Date()
             });
-            const savedNotification = await newNotification.save();
-            return res.status(201).json(savedNotification);
+            return res.status(201).json(newPayment);
         } catch (error) {
-            console.error('Error al crear la notificación:', error);
-            return res.status(500).json({ message: 'Error al crear la notificación' });
+            console.error('Error al crear el pago:', error);
+            return res.status(500).json({ message: 'Error al crear el pago' });
         }
     };
 
-    // Obtener todas las notificaciones
+    // Obtener todos los pagos
     getNotifications = async (_req: Request, res: Response): Promise<Response> => {
         try {
-            const notifications = await Notification.find();
-            return res.status(200).json(notifications);
+            const payments = await Payment.findAll();
+            return res.status(200).json(payments);
         } catch (error) {
-            console.error('Error al obtener las notificaciones:', error);
-            return res.status(500).json({ message: 'Error al obtener las notificaciones' });
+            console.error('Error al obtener los pagos:', error);
+            return res.status(500).json({ message: 'Error al obtener los pagos' });
         }
     };
 
-    // Obtener una notificación por ID
+    // Obtener un pago por ID
     getNotificationById = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const notification = await Notification.findById(id);
-            if (!notification) {
-                return res.status(404).json({ message: 'Notificación no encontrada' });
+            const payment = await Payment.findByPk(id);
+            if (!payment) {
+                return res.status(404).json({ message: 'Pago no encontrado' });
             }
-            return res.status(200).json(notification);
+            return res.status(200).json(payment);
         } catch (error) {
-            console.error('Error al obtener la notificación:', error);
-            return res.status(500).json({ message: 'Error al obtener la notificación' });
+            console.error('Error al obtener el pago:', error);
+            return res.status(500).json({ message: 'Error al obtener el pago' });
         }
     };
 
-    // Eliminar una notificación por ID
+    // Eliminar un pago por ID
     deleteNotification = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
-            const deletedNotification = await Notification.findByIdAndDelete(id);
-            if (!deletedNotification) {
-                return res.status(404).json({ message: 'Notificación no encontrada' });
+            const deletedPayment = await Payment.findByPk(id);
+            if (!deletedPayment) {
+                return res.status(404).json({ message: 'Pago no encontrado' });
             }
-            return res.status(200).json({ message: 'Notificación eliminada correctamente' });
+
+            await deletedPayment.destroy();
+            return res.status(200).json({ message: 'Pago eliminado correctamente' });
         } catch (error) {
-            console.error('Error al eliminar la notificación:', error);
-            return res.status(500).json({ message: 'Error al eliminar la notificación' });
+            console.error('Error al eliminar el pago:', error);
+            return res.status(500).json({ message: 'Error al eliminar el pago' });
         }
     }
 }

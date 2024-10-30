@@ -1,8 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { MercadoPagoService } from '../../services/mercadoPagoService';
 import { sendWhatsAppMessage } from '../../services/twilioService';
-import PaymentModel from '../../domain/models/notifation'
-
+import Payment from '../../domain/models/notifation';
 
 const router = Router();
 const mercadoPagoService = new MercadoPagoService();
@@ -45,9 +44,6 @@ router.post('/pago', async (req: Request, res: Response) => {
     }
 });
 
-
-
-
 // Ruta para el webhook de Mercado Pago
 router.post('/webhook', async (req: Request, res: Response) => {
     try {
@@ -78,7 +74,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
                 // Si todos los detalles están disponibles
                 if (paymentId && statusDetail && currencyId && totalPaidAmount) {
-                    await PaymentModel.create({
+                    await Payment.create({
                         payment_id: paymentId,
                         status_detail: statusDetail,
                         currency_id: currencyId,
@@ -114,10 +110,5 @@ router.post('/webhook', async (req: Request, res: Response) => {
         res.status(500).json({ detail: error.message });
     }
 });
-
-
-
-
-
 
 export default router;

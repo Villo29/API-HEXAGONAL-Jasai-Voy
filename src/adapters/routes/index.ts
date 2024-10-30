@@ -4,6 +4,8 @@ import usuariosRoutes from './usuarios.routes';
 import unidadRoutes from './unidad.routes';
 import nofificationRoutes from './mercadoPago.routes';
 import  whatsappRoutes from './whatsapp.routes';
+import mercadoPagoRoutes from './mercadoPago.routes'
+
 
 const router = express.Router();
 
@@ -21,6 +23,7 @@ router.use(`${apiVersion}/notifications`, nofificationRoutes);
 
 router.use(`${apiVersion}/send-whatsapp`, whatsappRoutes);
 
+router.use(`${apiVersion}/mercado-pago`, mercadoPagoRoutes);
 
 
 export default router;
