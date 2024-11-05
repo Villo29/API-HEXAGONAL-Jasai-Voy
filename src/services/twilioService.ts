@@ -9,12 +9,15 @@ const client = new Twilio(accountSid, authToken);
 
 export const sendWhatsAppMessage = async (to: string, body: string) => {
     try {
-        console.log(`Enviando mensaje a: ${to}`);
+        // Asegúrate de que el número `to` tiene el formato correcto
+        const formattedTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
+
+        console.log(`Enviando mensaje a: ${formattedTo}`);
 
         const message = await client.messages.create({
             body: body,
             from: process.env.TWILIO_WHATSAPP_NUMBER,
-            to: to
+            to: formattedTo
         });
 
         console.log('Mensaje enviado:', message.sid);

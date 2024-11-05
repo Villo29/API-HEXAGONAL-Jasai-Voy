@@ -1,4 +1,3 @@
-
 import fileUpload from 'express-fileupload';
 import { app } from '../../infrastructure';
 

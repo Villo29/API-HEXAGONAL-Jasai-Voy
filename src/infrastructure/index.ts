@@ -38,6 +38,10 @@ app.use(express.json());
 app.use(cors());
 app.use('/api', apiLimiter, routes);
 
+app.use('/', (req, res) => {
+    res.send('hola mundo');
+});
+
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
