@@ -59,7 +59,7 @@ export class UserController {
 
             await transporter.sendMail(mailOptions);
 
-            res.status(201).send({ token, nombre: usuario.nombre });
+            res.status(201).send({ token, _id: usuario._id });
         } catch (error) {
             console.error('Error en crearUsuario:', error);
             res.status(500).send({ error: 'Error al crear el usuario o enviar el correo.', detalle: (error as any).message });
