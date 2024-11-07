@@ -101,7 +101,14 @@ export class UserController {
             from: process.env.EMAIL_USER,
             to: usuario.correo,
             subject: 'Código de verificación',
-            text: `Tu código de verificación es: ${codigoVerificacion}`,
+            text: `¡Hola ${usuario.nombre}!, tu código de verificación es: ${codigoVerificacion}`,
+            html: `<div style="text-align: center; font-family: Arial, sans-serif;">
+            <h1>¡Hola ${usuario.nombre}!</h1>
+            <p>Haz intentado iniciar sesion. Tu código de verificación es:</p>
+            <div style="display: inline-block; padding: 10px; border: 2px solid #000; border-radius: 5px;">
+                <h2>${codigoVerificacion}</h2>
+            </div>
+        </div>`,
         };
 
         await transporter.sendMail(mailOptions);
