@@ -7,11 +7,13 @@ import bcrypt from 'bcrypt';
 
 
 
+
 export class UserController {
     constructor() { }
 
     // Crear un nuevo usuario
     crearUsuario = async (req: Request, res: Response) => {
+
         try {
             const { nombre, correo, contrasena, telefono } = req.body;
 
@@ -19,12 +21,14 @@ export class UserController {
             if (correoExistente) {
                 return res.status(400).json({ error: 'El correo ya está en uso.' });
             }
+            const saltRounds = 10;
+            const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
 
             const codigo_verificacion = crypto.randomBytes(3).toString('hex');
             const usuario = new Usuario({
                 nombre,
                 correo,
-                contrasena,
+                contrasena: hashedPassword,
                 telefono,
                 codigo_verificacion,
             });
@@ -67,7 +71,6 @@ export class UserController {
         }
     };
 
-    // Validación de usuario y registro de última fecha de operación
 // Función para iniciar sesión y enviar código de verificación
     loginUsuario = async (req: Request, res: Response) => {
     try {
@@ -89,8 +92,8 @@ export class UserController {
         const transporter = nodemailer.createTransport({
             service: 'gmail', // Puedes cambiar esto según el proveedor de correo que uses
             auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
+                user: "221263@ids.upchiapas.edu.mx",
+                pass: process.env.GMAIL_APP_PASSWORD,
             },
         });
 
@@ -113,14 +116,19 @@ export class UserController {
     verificarCodigo = async (req: Request, res: Response) => {
     try {
         const { correo, codigoVerificacion } = req.body;
+
         const usuario = await Usuario.findOne({ where: { correo } });
 
-        // Verificar si el usuario existe y el código coincide
-        if (!usuario || usuario.codigo_verificacion !== codigoVerificacion) {
+        // Verificar si el usuario existe y si el código coincide
+        if (!usuario) {
+            return res.status(404).send({ error: 'Usuario no encontrado.' });
+        }
+
+        if (usuario.codigo_verificacion !== codigoVerificacion.trim()) {
             return res.status(401).send({ error: 'Código de verificación no válido.' });
         }
 
-        // Generar el token JWT
+        // Generar el token JWT después de una verificación exitosa
         const token = jwt.sign({ _id: usuario.id }, process.env.JWT_SECRET || 'your_secret_key');
         usuario.codigo_verificacion = null; // Limpiar el código de verificación después de usarlo
         await usuario.save();
@@ -194,6 +202,8 @@ export class UserController {
 
 
 export const crearUsuario = UserController.prototype.crearUsuario;
+
+export const verificarCodigo = UserController.prototype.verificarCodigo;
 
 export const obtenerUsuarioPorId = UserController.prototype.obtenerUsuarioPorId;
 
