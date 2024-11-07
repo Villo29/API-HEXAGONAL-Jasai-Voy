@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
-import Usuario from '../../domain/models/usuario'; // Sequelize Model importado
+import Usuario, { IUsuario } from '../../domain/models/usuario';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import bcrypt from 'bcrypt';
+
+
 
 export class UserController {
     constructor() { }
@@ -18,7 +21,7 @@ export class UserController {
             }
 
             const codigo_verificacion = crypto.randomBytes(3).toString('hex');
-            const usuario = await Usuario.create({
+            const usuario = new Usuario({
                 nombre,
                 correo,
                 contrasena,
@@ -26,8 +29,10 @@ export class UserController {
                 codigo_verificacion,
             });
 
+            await usuario.save();
+
             const token = jwt.sign(
-                { id: usuario.id },
+                { _id: usuario.id },
                 process.env.JWT_SECRET || 'your_secret_key'
             );
 
@@ -55,7 +60,7 @@ export class UserController {
 
             await transporter.sendMail(mailOptions);
 
-            res.status(201).send({ token, nombre: usuario.nombre });
+            res.status(201).send({ token, id: usuario.id });
         } catch (error) {
             console.error('Error en crearUsuario:', error);
             res.status(500).send({ error: 'Error al crear el usuario o enviar el correo.', detalle: (error as any).message });
@@ -63,34 +68,79 @@ export class UserController {
     };
 
     // Validación de usuario y registro de última fecha de operación
+// Función para iniciar sesión y enviar código de verificación
     loginUsuario = async (req: Request, res: Response) => {
-        try {
-            const { correo, contrasena } = req.body;
-            const usuario = await Usuario.findOne({ where: { correo } });
+    try {
+        const { correo, contrasena } = req.body;
+        const usuario = await Usuario.findOne({ where: { correo } });
 
-            if (!usuario || usuario.contrasena !== contrasena) {
-                return res.status(401).send({ error: 'Credenciales no válidas.' });
-            }
-
-            usuario.fecha_operacion	 = new Date();
-            await usuario.save();
-
-            const token = jwt.sign({ id: usuario.id }, process.env.JWT_SECRET || 'your_secret_key');
-            res.send({ usuario, token });
-        } catch (error) {
-            res.status(400).send(error);
+        // Verificación de credenciales
+        if (!usuario || !(await bcrypt.compare(contrasena, usuario.contrasena))) {
+            return res.status(401).send({ error: 'Credenciales no válidas.' });
         }
-    };
+
+        // Generar un código de verificación aleatorio
+        const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
+        usuario.codigo_verificacion = codigoVerificacion;
+        usuario.fecha_operacion = new Date();
+        await usuario.save();
+
+        // Enviar el código de verificación por correo electrónico
+        const transporter = nodemailer.createTransport({
+            service: 'gmail', // Puedes cambiar esto según el proveedor de correo que uses
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: usuario.correo,
+            subject: 'Código de verificación',
+            text: `Tu código de verificación es: ${codigoVerificacion}`,
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.send({ message: 'Código de verificación enviado al correo electrónico.' });
+    } catch (error) {
+        res.status(400).send(error);
+    }
+};
+
+// Función para verificar el código y completar el inicio de sesión
+    verificarCodigo = async (req: Request, res: Response) => {
+    try {
+        const { correo, codigoVerificacion } = req.body;
+        const usuario = await Usuario.findOne({ where: { correo } });
+
+        // Verificar si el usuario existe y el código coincide
+        if (!usuario || usuario.codigo_verificacion !== codigoVerificacion) {
+            return res.status(401).send({ error: 'Código de verificación no válido.' });
+        }
+
+        // Generar el token JWT
+        const token = jwt.sign({ _id: usuario.id }, process.env.JWT_SECRET || 'your_secret_key');
+        usuario.codigo_verificacion = null; // Limpiar el código de verificación después de usarlo
+        await usuario.save();
+
+        res.send({ usuario, token });
+    } catch (error) {
+        res.status(400).send(error);
+    }
+};
+
 
     obtenerUsuarioPorId = async (req: Request, res: Response) => {
-        const id = req.params.id;
+        const _id = req.params.id;
         try {
-            const usuario = await Usuario.findByPk(id);
+            const usuario = await Usuario.findOne({ where: { id: _id } });
             if (!usuario) {
                 return res.status(404).send({ error: 'Usuario no encontrado' });
             }
 
-            usuario.fecha_operacion	 = new Date();
+            usuario.fecha_operacion = new Date();
             await usuario.save();
 
             res.status(200).send(usuario);
@@ -99,16 +149,18 @@ export class UserController {
         }
     };
 
+
     actualizarUsuario = async (req: Request, res: Response) => {
-        const updates = Object.keys(req.body) as Array<keyof typeof Usuario>;
-        const allowedUpdates: Array<keyof Usuario> = ['nombre', 'correo', 'contrasena', 'telefono'];
-        const isValidOperation = updates.every((update) => allowedUpdates.includes(update as keyof Usuario));
+        const updates = Object.keys(req.body) as Array<keyof IUsuario>;
+        const allowedUpdates: Array<keyof IUsuario> = ['nombre', 'correo', 'contrasena', 'telefono'];
+        const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
+
         if (!isValidOperation) {
             return res.status(400).send({ error: 'Actualización no permitida' });
         }
 
         try {
-            const usuario = await Usuario.findByPk(req.params.id);
+            const usuario = await Usuario.findOne({ where: { id: req.params.id } });
             if (!usuario) {
                 return res.status(404).send({ error: 'Usuario no encontrado' });
             }
@@ -116,7 +168,7 @@ export class UserController {
             updates.forEach((update) => {
                 (usuario as any)[update] = req.body[update];
             });
-            usuario.fecha_operacion	 = new Date();  // Registrar la fecha y hora de la actualización
+            usuario.fecha_operacion = new Date();  // Registrar la fecha y hora de la actualización
             await usuario.save();
             res.status(200).send(usuario);
         } catch (error) {
@@ -124,14 +176,15 @@ export class UserController {
         }
     };
 
+    // Eliminar un usuario por ID (opcionalmente registra la operación)
     eliminarUsuario = async (req: Request, res: Response) => {
         try {
-            const usuario = await Usuario.findByPk(req.params.id);
+            const usuario = await Usuario.destroy({ where: { id: req.params.id } });
             if (!usuario) {
                 return res.status(404).send();
             }
 
-            await usuario.destroy();
+
             res.status(200).send(usuario);
         } catch (error) {
             res.status(500).send(error);
@@ -139,8 +192,14 @@ export class UserController {
     };
 }
 
+
 export const crearUsuario = UserController.prototype.crearUsuario;
+
 export const obtenerUsuarioPorId = UserController.prototype.obtenerUsuarioPorId;
+
 export const actualizarUsuario = UserController.prototype.actualizarUsuario;
+
 export const eliminarUsuario = UserController.prototype.eliminarUsuario;
+
 export const loginUsuario = UserController.prototype.loginUsuario;
+

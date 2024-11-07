@@ -8,7 +8,7 @@ export interface IUsuario {
     correo: string;
     contrasena: string;
     telefono: string;
-    codigo_verificacion: string;
+    codigo_verificacion: string | null ;
     fecha_operacion	?: Date;
 }
 
@@ -19,7 +19,7 @@ class Usuario extends Model<IUsuario> implements IUsuario {
     public correo!: string;
     public contrasena!: string;
     public telefono!: string;
-    public codigo_verificacion!: string;
+    public codigo_verificacion!: string | null ;
     public fecha_operacion	!: Date;
 }
 
