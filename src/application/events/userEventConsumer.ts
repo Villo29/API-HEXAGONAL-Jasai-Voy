@@ -12,7 +12,11 @@ const transporter = nodemailer.createTransport({
 
 async function startUserCreatedConsumer() {
     try {
-        const connection = await amqp.connect('amqp://villo:cereza29@35.173.19.98:5672');
+        const rabbitmqUrl = process.env.RABBITMQ_URL;
+        if (!rabbitmqUrl) {
+            throw new Error("RABBITMQ_URL is not defined in the environment variables");
+        }
+        const connection = await amqp.connect(rabbitmqUrl);
         const channel = await connection.createChannel();
         await channel.assertQueue('user_events', { durable: true });
 

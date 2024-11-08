@@ -48,8 +48,7 @@ export class UserController {
                     codigo_verificacion,
                 },
             };
-            await publishEvent("user_events", eventData); // Enviamos el evento sin JSON.stringify
-            // Responder con el token y el ID del usuario
+            await publishEvent("user_events", eventData);
             res.status(201).send({ token, id: usuario.id });
         } catch (error) {
             console.error('Error en crearUsuario:', error);
