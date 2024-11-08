@@ -1,7 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../../infrastructure/database/db';
 
-// Definir la interfaz para el modelo Chofer (opcional para el tipado)
+
 export interface IChofer {
     id?: number;
     nombre: string;
@@ -13,7 +13,6 @@ export interface IChofer {
     fecha_operacion?: Date;
 }
 
-// Definir el modelo Chofer
 class Chofer extends Model<IChofer> implements IChofer {
     public id!: number;
     public nombre!: string;
@@ -25,7 +24,6 @@ class Chofer extends Model<IChofer> implements IChofer {
     public fecha_operacion!: Date;
 }
 
-// Inicializar el modelo Chofer con Sequelize
 Chofer.init(
     {
         id: {
@@ -64,10 +62,10 @@ Chofer.init(
         },
     },
     {
-        sequelize, // Conexión a la base de datos
+        sequelize,
         tableName: 'choferes',
         modelName: 'Chofer',
-        timestamps: false, // Desactivar las columnas createdAt y updatedAt
+        timestamps: false,
     }
 );
 

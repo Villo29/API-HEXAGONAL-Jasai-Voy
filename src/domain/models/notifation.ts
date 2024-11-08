@@ -1,7 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../../infrastructure/database/db';
 
-// Definir la interfaz para el modelo Payment
+
 export interface IPayment {
     id?: number;
     payment_id: number;
@@ -11,7 +11,6 @@ export interface IPayment {
     date_created?: Date;
 }
 
-// Definir el modelo Payment
 class Payment extends Model<IPayment> implements IPayment {
     public id!: number;
     public payment_id!: number;
@@ -21,7 +20,6 @@ class Payment extends Model<IPayment> implements IPayment {
     public date_created!: Date;
 }
 
-// Inicializar el modelo Payment con Sequelize
 Payment.init(
     {
         id: {
@@ -52,10 +50,10 @@ Payment.init(
         },
     },
     {
-        sequelize, // Conexión a la base de datos
+        sequelize,
         tableName: 'payments',
         modelName: 'Payment',
-        timestamps: false, // Desactivar las columnas createdAt y updatedAt
+        timestamps: false,
     }
 );
 

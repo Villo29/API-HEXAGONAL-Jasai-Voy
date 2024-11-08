@@ -19,12 +19,9 @@ export class UserController {
             if (correoExistente) {
                 return res.status(400).json({ error: 'El correo ya está en uso.' });
             }
-            // Generar el hash de la contraseña
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
-            // Generar el código de verificación
             const codigo_verificacion = crypto.randomBytes(3).toString('hex');
-            // Crear el usuario en la base de datos
             const usuario = new Usuario({
                 nombre,
                 correo,
@@ -33,12 +30,10 @@ export class UserController {
                 codigo_verificacion,
             });
             await usuario.save();
-            // Generar el token JWT
             const token = jwt.sign(
                 { _id: usuario.id },
                 process.env.JWT_SECRET || 'your_secret_key'
             );
-            // Publicar el evento de creación de usuario en la cola
             const eventData = {
                 type: "USER_CREATED",
                 data: {
@@ -59,16 +54,13 @@ export class UserController {
         try {
             const { correo, contrasena } = req.body;
             const usuario = await Usuario.findOne({ where: { correo } });
-
             if (!usuario || !(await bcrypt.compare(contrasena, usuario.contrasena))) {
                 return res.status(401).send({ error: 'Credenciales no válidas.' });
             }
-
             const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
             usuario.codigo_verificacion = codigoVerificacion;
             usuario.fecha_operacion = new Date();
             await usuario.save();
-
             const transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
@@ -76,7 +68,6 @@ export class UserController {
                     pass: process.env.GMAIL_APP_PASSWORD,
                 },
             });
-
             const mailOptions = {
                 from: process.env.EMAIL_USER,
                 to: usuario.correo,
@@ -90,9 +81,7 @@ export class UserController {
             </div>
         </div>`,
             };
-
             await transporter.sendMail(mailOptions);
-
             res.send({ message: 'Código de verificación enviado al correo electrónico.' });
         } catch (error) {
             res.status(400).send(error);
@@ -102,26 +91,21 @@ export class UserController {
     verificarCodigo = async (req: Request, res: Response) => {
         try {
             const { correo, codigoVerificacion } = req.body;
-
             const usuario = await Usuario.findOne({ where: { correo } });
             if (!usuario) {
                 return res.status(404).send({ error: 'Usuario no encontrado.' });
             }
-
             if (usuario.codigo_verificacion !== codigoVerificacion.trim()) {
                 return res.status(401).send({ error: 'Código de verificación no válido.' });
             }
-
             const token = jwt.sign({ _id: usuario.id }, process.env.JWT_SECRET || 'your_secret_key');
             usuario.codigo_verificacion = null;
             await usuario.save();
-
             res.send({ usuario, token });
         } catch (error) {
             res.status(400).send(error);
         }
     };
-
 
     obtenerUsuarioPorId = async (req: Request, res: Response) => {
         const _id = req.params.id;
@@ -130,36 +114,30 @@ export class UserController {
             if (!usuario) {
                 return res.status(404).send({ error: 'Usuario no encontrado' });
             }
-
             usuario.fecha_operacion = new Date();
             await usuario.save();
-
             res.status(200).send(usuario);
         } catch (error) {
             res.status(500).send(error);
         }
     };
 
-
     actualizarUsuario = async (req: Request, res: Response) => {
         const updates = Object.keys(req.body) as Array<keyof IUsuario>;
         const allowedUpdates: Array<keyof IUsuario> = ['nombre', 'correo', 'contrasena', 'telefono'];
         const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
-
         if (!isValidOperation) {
             return res.status(400).send({ error: 'Actualización no permitida' });
         }
-
         try {
             const usuario = await Usuario.findOne({ where: { id: req.params.id } });
             if (!usuario) {
                 return res.status(404).send({ error: 'Usuario no encontrado' });
             }
-
             updates.forEach((update) => {
                 (usuario as any)[update] = req.body[update];
             });
-            usuario.fecha_operacion = new Date();  // Registrar la fecha y hora de la actualización
+            usuario.fecha_operacion = new Date();
             await usuario.save();
             res.status(200).send(usuario);
         } catch (error) {
@@ -167,15 +145,12 @@ export class UserController {
         }
     };
 
-    // Eliminar un usuario por ID (opcionalmente registra la operación)
     eliminarUsuario = async (req: Request, res: Response) => {
         try {
             const usuario = await Usuario.destroy({ where: { id: req.params.id } });
             if (!usuario) {
                 return res.status(404).send();
             }
-
-
             res.status(200).send(usuario);
         } catch (error) {
             res.status(500).send(error);

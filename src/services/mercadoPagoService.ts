@@ -24,11 +24,9 @@ export class MercadoPagoService {
             }
             telefono = telefono.startsWith('+') ? telefono : `+${telefono}`;
             phoneStore[preferenceId] = telefono;
-
             const numeroDestino = `whatsapp:${telefono}`;
             const mensajeWhatsApp = `Tu enlace de pago es el siguiente: ${linkDePago}`;
             await sendWhatsAppMessage(numeroDestino, mensajeWhatsApp);
-
             return preferenceResponse.data;
         } catch (error) {
             if (error instanceof Error) {
@@ -41,19 +39,14 @@ export class MercadoPagoService {
         }
     }
 
-    // Método para procesar las notificaciones del webhook
     async processWebhook(notificacion: any) {
         try {
             if (notificacion.topic === 'merchant_order' && notificacion.resource) {
                 const mercadoPagoServiceInstance = new MercadoPagoService();
                 const orderDetails = await mercadoPagoServiceInstance.getOrderDetails(notificacion.resource);
                 console.log('Detalles de la orden recibidos:', orderDetails);
-
-                // Verificar si la orden contiene información de pagos
                 if (orderDetails.payments && orderDetails.payments.length > 0) {
                     const payment = orderDetails.payments[0];
-
-                    // Extraer los detalles del pago
                     const statusDetail = payment.status_detail;
                     const currencyId = payment.currency_id;
                     const paymentId = payment.id;
@@ -62,7 +55,6 @@ export class MercadoPagoService {
                     let payerPhone = phoneStore[preferenceId];
                     console.log('Número de teléfono recuperado de almacenamiento:', payerPhone);
                     payerPhone = payerPhone.startsWith('+') ? payerPhone : `+${payerPhone}`;
-
                     if (statusDetail && currencyId && paymentId && totalPaidAmount) {
                         await PaymentModel.create({
                             payment_id: paymentId,
@@ -76,8 +68,6 @@ export class MercadoPagoService {
                             currency_id: currencyId,
                             total_paid_amount: totalPaidAmount
                         });
-
-                        // Publica el evento PAYMENT_ACCREDITED en RabbitMQ
                         const eventData = {
                             type: "PAYMENT_ACCREDITED",
                             data: {
@@ -89,7 +79,6 @@ export class MercadoPagoService {
                         };
                         await publishEvent("payment_events", eventData);
                         console.log('Evento PAYMENT_ACCREDITED publicado en la cola payment_events.');
-
                         delete phoneStore[preferenceId];
                     } else {
                         console.log('Faltan algunos detalles del pago, no se guardó en la base de datos.');

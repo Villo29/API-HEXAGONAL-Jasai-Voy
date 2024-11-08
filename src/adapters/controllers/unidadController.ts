@@ -51,17 +51,14 @@ export class UnidadController {
         const isValidOperation = updates.every((update) =>
             allowedUpdates.includes(update as keyof Unidad)
         );
-
         if (!isValidOperation) {
             return res.status(400).send({ error: 'Actualización no permitida' });
         }
-
         try {
             const unidad = await Unidad.findByPk(req.params.id);
             if (!unidad) {
                 return res.status(404).send({ error: 'Unidad no encontrada' });
             }
-
             updates.forEach((update) => {
                 (unidad as any)[update] = req.body[update];
             });
@@ -78,7 +75,6 @@ export class UnidadController {
             if (!unidad) {
                 return res.status(404).send({ error: 'Unidad no encontrada' });
             }
-
             await unidad.destroy();
             res.status(200).send(unidad);
         } catch (error) {

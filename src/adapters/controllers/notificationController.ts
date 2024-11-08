@@ -4,23 +4,16 @@ import Payment from '../../domain/models/notifation';
 export class NotificationController {
     constructor() {}
 
-    // Crear una nueva notificación si los datos no son nulos
     createNotification = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { payment_id, status_detail, currency_id, total_paid_amount, date_created } = req.body;
-
-            // Validar que los campos requeridos no sean nulos
             if (!payment_id || !status_detail || !currency_id || !total_paid_amount) {
                 return res.status(400).json({ message: 'Todos los campos obligatorios deben ser proporcionados y no deben ser nulos' });
             }
-
-            // Verificar si el pago ya existe
             const existingPayment = await Payment.findOne({ where: { payment_id } });
             if (existingPayment) {
                 return res.status(400).json({ message: 'El pago ya existe en la base de datos' });
             }
-
-            // Crear un nuevo pago con los datos proporcionados
             const newPayment = await Payment.create({
                 payment_id,
                 status_detail,
@@ -35,7 +28,6 @@ export class NotificationController {
         }
     };
 
-    // Obtener todos los pagos
     getNotifications = async (_req: Request, res: Response): Promise<Response> => {
         try {
             const payments = await Payment.findAll();
@@ -46,7 +38,6 @@ export class NotificationController {
         }
     };
 
-    // Obtener un pago por ID
     getNotificationById = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;
@@ -61,7 +52,6 @@ export class NotificationController {
         }
     };
 
-    // Eliminar un pago por ID
     deleteNotification = async (req: Request, res: Response): Promise<Response> => {
         try {
             const { id } = req.params;

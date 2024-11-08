@@ -19,7 +19,6 @@ async function startUserCreatedConsumer() {
         const connection = await amqp.connect(rabbitmqUrl);
         const channel = await connection.createChannel();
         await channel.assertQueue('user_events_queue', { durable: true });
-
         console.log("Waiting for USER_CREATED events...");
         channel.consume('user_events_queue', async (msg) => {
             if (msg !== null) {
@@ -41,13 +40,11 @@ async function startUserCreatedConsumer() {
                                         </div>
                                     </div>`,
                         };
-
                         const info = await transporter.sendMail(mailOptions);
                         console.log(`Correo de bienvenida enviado a ${correo}: ${info.messageId}`);
                     } else {
                         console.log("Tipo de evento desconocido:", event.type);
                     }
-
                     channel.ack(msg);
                 } catch (error) {
                     console.error("Error al procesar el mensaje:", error);
