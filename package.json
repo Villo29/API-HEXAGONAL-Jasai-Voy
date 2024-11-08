@@ -4,8 +4,9 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon --exec ts-node src/infrastructure/index.ts",
-    "start-consumer": "nodemon --exec ts-node src/application/events/userEventConsumer.ts",
-    "dev": "concurrently \"npm run start\" \"npm run start-consumer\""
+    "start-user-consumer": "nodemon --exec ts-node src/application/events/userEventConsumer.ts",
+    "start-payment-consumer": "nodemon --exec ts-node src/application/events/paymentEventConsumer.ts",
+    "dev": "concurrently \"npm run start\" \"npm run start-user-consumer\" \"npm run start-payment-consumer\""
   },
   "keywords": [],
   "author": "",

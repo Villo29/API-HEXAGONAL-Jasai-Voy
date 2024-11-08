@@ -15,7 +15,6 @@ export class UserController {
     crearUsuario = async (req: Request, res: Response) => {
         try {
             const { nombre, correo, contrasena, telefono } = req.body;
-            // Verificar si el correo ya existe
             const correoExistente = await Usuario.findOne({ where: { correo } });
             if (correoExistente) {
                 return res.status(400).json({ error: 'El correo ya está en uso.' });

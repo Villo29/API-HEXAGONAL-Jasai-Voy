@@ -1,11 +1,11 @@
 import axios from 'axios';
 import PaymentModel from '../domain/models/notifation';
 import { sendWhatsAppMessage } from '../services/twilioService';
+import { publishEvent } from '../application/events/eventPublisher';
 
-const phoneStore: { [preferenceId: string]: string } = {}; // Almacenamiento en memoria
+const phoneStore: { [preferenceId: string]: string } = {};
 
 export class MercadoPagoService {
-    // Método para crear un pago
     async createPayment(preferenceData: any) {
         try {
             console.log('Datos recibidos en createPayment:', preferenceData);
@@ -77,18 +77,20 @@ export class MercadoPagoService {
                             total_paid_amount: totalPaidAmount
                         });
 
-                        if (payerPhone) {
-                            const numeroDestino = `whatsapp:${payerPhone}`;
-                            console.log('Enviando mensaje a:', numeroDestino);
-                            const mensajeWhatsApp = `✅ *¡Pago Acreditado!*
-                            \nTu pago de *${currencyId} ${totalPaidAmount}* ha sido acreditado con éxito.
-                            \n👉 *ID de pago:* ${paymentId}`;
-                            await sendWhatsAppMessage(numeroDestino, mensajeWhatsApp);
-                            console.log('Mensaje de WhatsApp enviado al cliente:', payerPhone);
-                            delete phoneStore[preferenceId];
-                        } else {
-                            console.log('Número de teléfono no disponible para enviar el mensaje de WhatsApp.');
-                        }
+                        // Publica el evento PAYMENT_ACCREDITED en RabbitMQ
+                        const eventData = {
+                            type: "PAYMENT_ACCREDITED",
+                            data: {
+                                currencyId,
+                                totalPaidAmount,
+                                paymentId,
+                                payerPhone
+                            }
+                        };
+                        await publishEvent("payment_events", eventData);
+                        console.log('Evento PAYMENT_ACCREDITED publicado en la cola payment_events.');
+
+                        delete phoneStore[preferenceId];
                     } else {
                         console.log('Faltan algunos detalles del pago, no se guardó en la base de datos.');
                     }

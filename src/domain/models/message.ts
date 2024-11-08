@@ -3,3 +3,5 @@ export interface Message {
     templateName: string;
     languageCode: string;
 }
+
+export default Message;
