@@ -1,0 +1,1 @@
+export const RABBITMQ_URL = 'amqp://villo:cereza29@35.173.19.98:5672';

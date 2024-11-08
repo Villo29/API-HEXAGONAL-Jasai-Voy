@@ -1,30 +1,31 @@
 import { Request, Response } from 'express';
 import Usuario, { IUsuario } from '../../domain/models/usuario';
+import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcrypt';
-
+import { publishEvent } from '../../application/events/eventPublisher';
 
 
 
 export class UserController {
     constructor() { }
 
-    // Crear un nuevo usuario
     crearUsuario = async (req: Request, res: Response) => {
-
         try {
             const { nombre, correo, contrasena, telefono } = req.body;
-
+            // Verificar si el correo ya existe
             const correoExistente = await Usuario.findOne({ where: { correo } });
             if (correoExistente) {
                 return res.status(400).json({ error: 'El correo ya está en uso.' });
             }
+            // Generar el hash de la contraseña
             const saltRounds = 10;
             const hashedPassword = await bcrypt.hash(contrasena, saltRounds);
-
+            // Generar el código de verificación
             const codigo_verificacion = crypto.randomBytes(3).toString('hex');
+            // Crear el usuario en la base de datos
             const usuario = new Usuario({
                 nombre,
                 correo,
@@ -32,38 +33,23 @@ export class UserController {
                 telefono,
                 codigo_verificacion,
             });
-
             await usuario.save();
-
+            // Generar el token JWT
             const token = jwt.sign(
                 { _id: usuario.id },
                 process.env.JWT_SECRET || 'your_secret_key'
             );
-
-            const transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: '221263@ids.upchiapas.edu.mx',
-                    pass: process.env.GMAIL_APP_PASSWORD,
+            // Publicar el evento de creación de usuario en la cola
+            const eventData = {
+                type: "USER_CREATED",
+                data: {
+                    nombre,
+                    correo,
+                    codigo_verificacion,
                 },
-            });
-
-            const mailOptions = {
-                from: '221263@ids.upchiapas.edu.mx',
-                to: correo,
-                subject: '¡Bienvenido a nuestra plataforma!',
-                text: `¡Hola ${nombre}!, tu código de verificación es: ${codigo_verificacion}`,
-                html: `<div style="text-align: center; font-family: Arial, sans-serif;">
-                            <h1>¡Hola ${nombre}!</h1>
-                            <p>Gracias por unirte a nuestra plataforma. Tu código de verificación es:</p>
-                            <div style="display: inline-block; padding: 10px; border: 2px solid #000; border-radius: 5px;">
-                                <h2>${codigo_verificacion}</h2>
-                            </div>
-                        </div>`,
             };
-
-            await transporter.sendMail(mailOptions);
-
+            await publishEvent("user_events", eventData); // Enviamos el evento sin JSON.stringify
+            // Responder con el token y el ID del usuario
             res.status(201).send({ token, id: usuario.id });
         } catch (error) {
             console.error('Error en crearUsuario:', error);
@@ -71,80 +57,72 @@ export class UserController {
         }
     };
 
-// Función para iniciar sesión y enviar código de verificación
     loginUsuario = async (req: Request, res: Response) => {
-    try {
-        const { correo, contrasena } = req.body;
-        const usuario = await Usuario.findOne({ where: { correo } });
+        try {
+            const { correo, contrasena } = req.body;
+            const usuario = await Usuario.findOne({ where: { correo } });
 
-        // Verificación de credenciales
-        if (!usuario || !(await bcrypt.compare(contrasena, usuario.contrasena))) {
-            return res.status(401).send({ error: 'Credenciales no válidas.' });
-        }
+            if (!usuario || !(await bcrypt.compare(contrasena, usuario.contrasena))) {
+                return res.status(401).send({ error: 'Credenciales no válidas.' });
+            }
 
-        // Generar un código de verificación aleatorio
-        const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
-        usuario.codigo_verificacion = codigoVerificacion;
-        usuario.fecha_operacion = new Date();
-        await usuario.save();
+            const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
+            usuario.codigo_verificacion = codigoVerificacion;
+            usuario.fecha_operacion = new Date();
+            await usuario.save();
 
-        // Enviar el código de verificación por correo electrónico
-        const transporter = nodemailer.createTransport({
-            service: 'gmail', // Puedes cambiar esto según el proveedor de correo que uses
-            auth: {
-                user: "221263@ids.upchiapas.edu.mx",
-                pass: process.env.GMAIL_APP_PASSWORD,
-            },
-        });
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: "221263@ids.upchiapas.edu.mx",
+                    pass: process.env.GMAIL_APP_PASSWORD,
+                },
+            });
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: usuario.correo,
-            subject: 'Código de verificación',
-            text: `¡Hola ${usuario.nombre}!, tu código de verificación es: ${codigoVerificacion}`,
-            html: `<div style="text-align: center; font-family: Arial, sans-serif;">
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: usuario.correo,
+                subject: 'Código de verificación',
+                text: `¡Hola ${usuario.nombre}!, tu código de verificación es: ${codigoVerificacion}`,
+                html: `<div style="text-align: center; font-family: Arial, sans-serif;">
             <h1>¡Hola ${usuario.nombre}!</h1>
             <p>Haz intentado iniciar sesion. Tu código de verificación es:</p>
             <div style="display: inline-block; padding: 10px; border: 2px solid #000; border-radius: 5px;">
                 <h2>${codigoVerificacion}</h2>
             </div>
         </div>`,
-        };
+            };
 
-        await transporter.sendMail(mailOptions);
+            await transporter.sendMail(mailOptions);
 
-        res.send({ message: 'Código de verificación enviado al correo electrónico.' });
-    } catch (error) {
-        res.status(400).send(error);
-    }
-};
+            res.send({ message: 'Código de verificación enviado al correo electrónico.' });
+        } catch (error) {
+            res.status(400).send(error);
+        }
+    };
 
-// Función para verificar el código y completar el inicio de sesión
     verificarCodigo = async (req: Request, res: Response) => {
-    try {
-        const { correo, codigoVerificacion } = req.body;
+        try {
+            const { correo, codigoVerificacion } = req.body;
 
-        const usuario = await Usuario.findOne({ where: { correo } });
+            const usuario = await Usuario.findOne({ where: { correo } });
+            if (!usuario) {
+                return res.status(404).send({ error: 'Usuario no encontrado.' });
+            }
 
-        // Verificar si el usuario existe y si el código coincide
-        if (!usuario) {
-            return res.status(404).send({ error: 'Usuario no encontrado.' });
+            if (usuario.codigo_verificacion !== codigoVerificacion.trim()) {
+                return res.status(401).send({ error: 'Código de verificación no válido.' });
+            }
+
+            const token = jwt.sign({ _id: usuario.id }, process.env.JWT_SECRET || 'your_secret_key');
+            usuario.codigo_verificacion = null;
+            await usuario.save();
+
+            res.send({ usuario, token });
+        } catch (error) {
+            res.status(400).send(error);
         }
-
-        if (usuario.codigo_verificacion !== codigoVerificacion.trim()) {
-            return res.status(401).send({ error: 'Código de verificación no válido.' });
-        }
-
-        // Generar el token JWT después de una verificación exitosa
-        const token = jwt.sign({ _id: usuario.id }, process.env.JWT_SECRET || 'your_secret_key');
-        usuario.codigo_verificacion = null; // Limpiar el código de verificación después de usarlo
-        await usuario.save();
-
-        res.send({ usuario, token });
-    } catch (error) {
-        res.status(400).send(error);
-    }
-};
+    };
 
 
     obtenerUsuarioPorId = async (req: Request, res: Response) => {
