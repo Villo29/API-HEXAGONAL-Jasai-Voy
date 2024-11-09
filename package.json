@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon --exec ts-node src/payments/infrastructure/index.ts",
-    "start-user-consumer": "nodemon --exec ts-node src/application/events/userEventConsumer.ts",
+    "start-payments": "nodemon --exec ts-node src/payments/infrastructure/index.ts",
+    "start-users": "nodemon --exec ts-node src/users/infrastructure/index.ts",
     "start-consumer": "nodemon --exec ts-node src/notifications/application/events/NotificationConsumer.ts",
-    "dev": "concurrently \"npm run start\" \"npm run start-consumer\""
+    "dev": "concurrently \"npm run start-users\" \"npm run start-consumer\" \"npm run start-payments\""
   },
   "keywords": [],
   "author": "",

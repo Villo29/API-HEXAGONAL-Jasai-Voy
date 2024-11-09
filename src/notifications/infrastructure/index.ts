@@ -1,7 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { Sequelize } from 'sequelize';
 import rateLimit from 'express-rate-limit';
 import routes from '../adapters/routes/index';
 
@@ -15,18 +14,6 @@ if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
     process.exit(1);
 }
 
-const sequelize = new Sequelize(process.env.MYSQL_DB || '', process.env.MYSQL_USER || '', process.env.MYSQL_PASSWORD || '', {
-    host: process.env.MYSQL_HOST || 'localhost',
-    dialect: 'mysql',
-});
-
-sequelize.authenticate()
-    .then(() => {
-        console.log('Conectado a la base de datos MySQL');
-    })
-    .catch((error) => {
-        console.error('Error al conectar a la base de datos MySQL', error);
-    });
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,

@@ -7,7 +7,7 @@ import routes from '../adapters/routes/index';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || '';
+const port = process.env.PORTU || '';
 
 
 const apiLimiter = rateLimit({
