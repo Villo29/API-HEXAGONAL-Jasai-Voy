@@ -1,7 +1,7 @@
 import axios from 'axios';
 import PaymentModel from '../domain/models/notifation';
 import { sendWhatsAppMessage } from '../services/twilioService';
-import { publishEvent } from '../application/events/eventPublisher';
+import { publishEvent } from '../../notifications/application/events/eventPublisher';
 
 const phoneStore: { [preferenceId: string]: string } = {};
 
