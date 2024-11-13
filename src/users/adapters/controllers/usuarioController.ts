@@ -44,35 +44,36 @@ export class UserController {
             const result = await client.query(`SELECT * FROM usuarios WHERE correo = $1`, [correo]);
             const usuario = result.rows[0];
             if (!usuario || !(await bcrypt.compare(contrasena, usuario.contrasena))) {
-                return res.status(401).send({ error: 'Credenciales no válidas.' });
+            return res.status(401).send({ error: 'Credenciales no válidas.' });
             }
-            const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
+            const codigoVerificacion = crypto.randomBytes(3).toString('hex');
             await client.query(`UPDATE usuarios SET codigo_verificacion = $1, fecha_operacion = NOW() WHERE id = $2`, [codigoVerificacion, usuario.id]);
             const transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: "221263@ids.upchiapas.edu.mx",
-                    pass: process.env.GMAIL_APP_PASSWORD,
-                },
+            service: 'gmail',
+            auth: {
+                user: "221263@ids.upchiapas.edu.mx",
+                pass: process.env.GMAIL_APP_PASSWORD,
+            },
             });
 
             const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: usuario.correo,
-                subject: 'Código de verificación',
-                html: `<div style="text-align: center; font-family: Arial, sans-serif;">
-                            <h1>¡Hola ${usuario.nombre}!</h1>
-                            <p>Haz intentado iniciar sesión. Tu código de verificación es:</p>
-                            <div style="display: inline-block; padding: 10px; border: 2px solid #000; border-radius: 5px;">
-                                <h2>${codigoVerificacion}</h2>
-                            </div>
-                    </div>`,
+            from: process.env.EMAIL_USER,
+            to: usuario.correo,
+            subject: 'Código de verificación',
+            html: `<div style="text-align: center; font-family: Arial, sans-serif;">
+                    <h1>¡Hola ${usuario.nombre}!</h1>
+                    <p>Haz intentado iniciar sesión. Tu código de verificación es:</p>
+                    <div style="display: inline-block; padding: 10px; border: 2px solid #000; border-radius: 5px;">
+                    <h2>${codigoVerificacion}</h2>
+                    </div>
+                </div>`,
             };
             await transporter.sendMail(mailOptions);
 
-            res.send({ message: 'Código de verificación enviado al correo electrónico.' });
+            res.status(200).send({ message: 'Código de verificación enviado al correo electrónico.' });
         } catch (error) {
-            res.status(400).send(error);
+            console.error('Error en loginUsuario:', error);
+            res.status(500).send({ error: 'Error en el servidor.', detalle: (error as any).message });
         }
     };
 
