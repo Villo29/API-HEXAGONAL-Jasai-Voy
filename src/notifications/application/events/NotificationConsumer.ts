@@ -41,10 +41,13 @@ async function startNotificationConsumer() {
                     const event = JSON.parse(msg.content.toString());
                     console.log("Evento recibido:", event);
                     const eventType = event.data?.type;
+
                     if (eventType === "USER_CREATED") {
                         await handleUserCreated(event.data.data);
                     } else if (eventType === "PAYMENT_ACCREDITED") {
                         await handlePaymentAccredited(event.data.data);
+                    } else if (eventType === "CHOFER_CREATED") {
+                        await handleChoferCreated(event.data.data);
                     } else {
                         console.log("Tipo de evento desconocido:", eventType);
                     }
@@ -57,6 +60,41 @@ async function startNotificationConsumer() {
         });
     } catch (error) {
         console.error("Error en el consumidor de notificaciones:", error);
+    }
+}
+
+async function handleChoferCreated(data: any) {
+    const { nombre, correo, codigo_verificacion } = data;
+
+    const notificationData = {
+        user_id: correo,
+        title: "Bienvenido a nuestra plataforma",
+        content: `¡Hola ${nombre}!, tu código de verificación es: ${codigo_verificacion}`,
+        type: "CHOFER_CREATED",
+        service_type: "email",
+    };
+
+    await saveNotification(notificationData);
+
+    const mailOptions = {
+        from: '221263@ids.upchiapas.edu.mx',
+        to: correo,
+        subject: '¡Bienvenido a nuestra plataforma!',
+        text: `¡Hola ${nombre}!, tu código de verificación es: ${codigo_verificacion}`,
+        html: `<div style="text-align: center; font-family: Arial, sans-serif;">
+                    <h1>¡Hola ${nombre}!</h1>
+                    <p>Gracias por unirte a nuestra plataforma. Tu código de verificación es:</p>
+                    <div style="display: inline-block; padding: 10px; border: 2px solid #000; border-radius: 5px;">
+                        <h2>${codigo_verificacion}</h2>
+                    </div>
+                </div>`,
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Correo de bienvenida enviado a ${correo}: ${info.messageId}`);
+    } catch (error) {
+        console.error("Error al enviar el correo de bienvenida:", error);
     }
 }
 
