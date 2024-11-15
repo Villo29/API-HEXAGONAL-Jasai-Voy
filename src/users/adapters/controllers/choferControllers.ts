@@ -59,7 +59,7 @@ export class driveController {
             const transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
-                    user: process.env.EMAIL_USER,
+                    user: "221263@ids.upchiapas.edu.mx",
                     pass: process.env.GMAIL_APP_PASSWORD,
                 },
             });
