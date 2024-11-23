@@ -6,6 +6,7 @@ const schema = Joi.object({
   correo: Joi.string().email().required(),
   contrasena: Joi.string().min(6).required(),
   telefono: Joi.string().min(10).max(10).required(),
+  imagen_url: Joi.any(),
 });
 
 export const validarUsuario = (req: Request, res: Response, next: NextFunction) => {

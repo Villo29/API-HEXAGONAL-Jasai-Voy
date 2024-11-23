@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcrypt';
+import subirImagenCloudinary from '../../application/services/subirImagenCloudinary';
 import { publishEvent } from '../../../notifications/application/events/eventPublisher';
 
 
@@ -13,54 +14,74 @@ export class UserController {
     crearUsuario = async (req: Request, res: Response) => {
         try {
             const { nombre, correo, contrasena, telefono } = req.body;
+            const file = req.file;
+
             const correoExistente = await client.query(`SELECT * FROM usuarios WHERE correo = $1`, [correo]);
             if (correoExistente.rows.length > 0) {
                 return res.status(400).json({ error: 'El correo ya está en uso.' });
             }
+
             const hashedPassword = await bcrypt.hash(contrasena, 10);
             const codigo_verificacion = crypto.randomBytes(3).toString('hex');
+
+            let imagenUrl = null;
+            if (file) {
+                try {
+                    imagenUrl = await subirImagenCloudinary(file.buffer, 'usuarios');
+                } catch (error) {
+                    console.error('Error al subir la imagen a Cloudinary:', error);
+                    return res.status(500).json({ error: 'Error al subir la imagen.' });
+                }
+            }
             const result = await client.query(
-                `INSERT INTO usuarios (nombre, correo, contrasena, telefono, codigo_verificacion, fecha_operacion)
-                VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id`,
-                [nombre, correo, hashedPassword, telefono, codigo_verificacion]
+                `INSERT INTO usuarios (nombre, correo, contrasena, telefono, codigo_verificacion, imagen_url, fecha_operacion)
+                VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING id`,
+                [nombre, correo, hashedPassword, telefono, codigo_verificacion, imagenUrl]
             );
+
             const usuarioId = result.rows[0].id;
             const token = jwt.sign({ _id: usuarioId }, process.env.JWT_SECRET || 'your_secret_key');
             const eventData = {
                 type: "USER_CREATED",
-                data: { nombre, correo, codigo_verificacion },
+                data: {
+                    nombre,
+                    correo,
+                    codigo_verificacion,
+                    imagenUrl
+                },
             };
             await publishEvent("user_events", eventData);
 
-            res.status(201).send({ token, id: usuarioId });
+            res.status(201).send({ token, id: usuarioId, imagenUrl });
         } catch (error) {
             console.error('Error en crearUsuario:', error);
-            res.status(500).send({ error: 'Error al crear el usuario o enviar el correo.', detalle: (error as any).message });
+            res.status(500).send({ error: 'Error al crear el usuario o subir la imagen.', detalle: (error as any).message });
         }
     };
+
     loginUsuario = async (req: Request, res: Response) => {
         try {
             const { correo, contrasena } = req.body;
             const result = await client.query(`SELECT * FROM usuarios WHERE correo = $1`, [correo]);
             const usuario = result.rows[0];
             if (!usuario || !(await bcrypt.compare(contrasena, usuario.contrasena))) {
-            return res.status(401).send({ error: 'Credenciales no válidas.' });
+                return res.status(401).send({ error: 'Credenciales no válidas.' });
             }
             const codigoVerificacion = crypto.randomBytes(3).toString('hex');
             await client.query(`UPDATE usuarios SET codigo_verificacion = $1, fecha_operacion = NOW() WHERE id = $2`, [codigoVerificacion, usuario.id]);
             const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: "221263@ids.upchiapas.edu.mx",
-                pass: process.env.GMAIL_APP_PASSWORD,
-            },
+                service: 'gmail',
+                auth: {
+                    user: "221263@ids.upchiapas.edu.mx",
+                    pass: process.env.GMAIL_APP_PASSWORD,
+                },
             });
 
             const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: usuario.correo,
-            subject: 'Código de verificación',
-            html: `<div style="text-align: center; font-family: Arial, sans-serif;">
+                from: process.env.EMAIL_USER,
+                to: usuario.correo,
+                subject: 'Código de verificación',
+                html: `<div style="text-align: center; font-family: Arial, sans-serif;">
                     <h1>¡Hola ${usuario.nombre}!</h1>
                     <p>Haz intentado iniciar sesión. Tu código de verificación es:</p>
                     <div style="display: inline-block; padding: 10px; border: 2px solid #000; border-radius: 5px;">

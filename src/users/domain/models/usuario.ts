@@ -1,5 +1,6 @@
 import { Client } from 'pg';
 import dotenv from 'dotenv';
+import cloudinary from '../../application/services/cloudinary'; // Importa la configuración de Cloudinary
 dotenv.config();
 
 export const client = new Client({
@@ -16,6 +17,7 @@ export const client = new Client({
 client.connect()
     .then(() => console.log('Conectado a la base de datos PostgreSQL exitosamente.'))
     .catch((error) => console.error('Error al conectar a la base de datos PostgreSQL:', error));
+
 export interface IUsuario {
     id?: number;
     nombre: string;
@@ -23,14 +25,15 @@ export interface IUsuario {
     contrasena: string;
     telefono: string;
     codigo_verificacion: string | null;
+    imagen_url?: string;
     fecha_operacion?: Date;
 }
 
 class Usuario {
     public static async crear(usuario: IUsuario): Promise<void> {
         const query = `
-            INSERT INTO usuarios (nombre, correo, contrasena, telefono, codigo_verificacion, fecha_operacion)
-            VALUES ($1, $2, $3, $4, $5, NOW())
+            INSERT INTO usuarios (nombre, correo, contrasena, telefono, codigo_verificacion, imagen_url, fecha_operacion)
+            VALUES ($1, $2, $3, $4, $5, $6, NOW())
             RETURNING id
         `;
         const values = [
@@ -39,6 +42,7 @@ class Usuario {
             usuario.contrasena,
             usuario.telefono,
             usuario.codigo_verificacion,
+            usuario.imagen_url,
         ];
 
         try {
@@ -49,15 +53,15 @@ class Usuario {
         }
     }
 
-    public static async obtenerPorCorreo(correo: string): Promise<IUsuario | null> {
-        const query = `SELECT * FROM usuarios WHERE correo = $1`;
-        const values = [correo];
-
+    public static async subirImagen(imagenPath: string): Promise<string | null> {
         try {
-            const res = await client.query(query, values);
-            return res.rows[0] || null;
+            const result = await cloudinary.uploader.upload(imagenPath, {
+                folder: 'usuarios',
+            });
+            console.log('Imagen subida a Cloudinary:', result.secure_url);
+            return result.secure_url;
         } catch (error) {
-            console.error('Error al obtener el usuario:', error);
+            console.error('Error al subir la imagen a Cloudinary:', error);
             return null;
         }
     }
@@ -71,17 +75,6 @@ class Usuario {
             console.log(`Usuario con ID ${id} actualizado correctamente.`);
         } catch (error) {
             console.error('Error al actualizar el usuario:', error);
-        }
-    }
-
-    public static async eliminar(id: number): Promise<void> {
-        const query = `DELETE FROM usuarios WHERE id = $1`;
-        const values = [id];
-        try {
-            await client.query(query, values);
-            console.log(`Usuario con ID ${id} eliminado correctamente.`);
-        } catch (error) {
-            console.error('Error al eliminar el usuario:', error);
         }
     }
 }
