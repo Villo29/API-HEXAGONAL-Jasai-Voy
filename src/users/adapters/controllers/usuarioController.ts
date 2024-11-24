@@ -137,15 +137,35 @@ export class UserController {
         const _id = parseInt(req.params.id);
         const { nombre, correo, contrasena, telefono } = req.body;
         try {
-            await client.query(
-                `UPDATE usuarios SET nombre = $1, correo = $2, contrasena = $3, telefono = $4, fecha_operacion = NOW() WHERE id = $5`,
-                [nombre, correo, await bcrypt.hash(contrasena, 10), telefono, _id]
-            );
+            const updates = [];
+            const values = [];
+            let placeholderIndex = 1;
+            if (nombre) {
+                updates.push(`nombre = $${placeholderIndex++}`);
+                values.push(nombre);
+            }
+            if (correo) {
+                updates.push(`correo = $${placeholderIndex++}`);
+                values.push(correo);
+            }
+            if (contrasena) {
+                updates.push(`contrasena = $${placeholderIndex++}`);
+                values.push(await bcrypt.hash(contrasena, 10));
+            }
+            if (telefono) {
+                updates.push(`telefono = $${placeholderIndex++}`);
+                values.push(telefono);
+            }
+            updates.push(`fecha_operacion = NOW()`);
+            values.push(_id);
+            const query = `UPDATE usuarios SET ${updates.join(', ')} WHERE id = $${placeholderIndex}`;
+            await client.query(query, values);
             res.status(200).send({ message: 'Usuario actualizado correctamente.' });
         } catch (error) {
-            res.status(400).send(error);
+            res.status(400).send({ message: 'Error al actualizar el usuario.', error: (error as any).message });
         }
     };
+
 
     eliminarUsuario = async (req: Request, res: Response) => {
         const _id = parseInt(req.params.id);

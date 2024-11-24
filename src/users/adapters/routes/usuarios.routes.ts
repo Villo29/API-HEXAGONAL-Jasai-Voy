@@ -9,7 +9,7 @@ const userController = new UserController();
 
 router.post('/', upload.single('imagenPath'), validarUsuario, userController.crearUsuario);
 router.get('/:id', authMiddleware, userController.obtenerUsuarioPorId);
-router.put('/:id', authMiddleware, validarUsuario, userController.actualizarUsuario);
+router.put('/:id', authMiddleware, userController.actualizarUsuario);
 router.delete('/:id', authMiddleware, userController.eliminarUsuario);
 router.post('/login', userController.loginUsuario);
 router.post('/validar-usuario', userController.verificarCodigo);
