@@ -1,5 +1,6 @@
 import { Client } from 'pg';
 import dotenv from 'dotenv';
+import cloudinary from '../../application/services/cloudinary'; // Importa la configuración de Cloudinary
 dotenv.config();
 
 export const client = new Client({
@@ -26,6 +27,7 @@ export interface IChofer {
     telefono: string;
     curp: string;
     matricula: string;
+    imagen_url?: string;
     fecha_creada?: Date;
 }
 
@@ -35,7 +37,7 @@ class Chofer {
     public static async crear(chofer: IChofer): Promise<void> {
         const query = `
             INSERT INTO choferes (nombre, correo, contrasena, telefono, curp, matricula, fecha_creada)
-            VALUES ($1, $2, $3, $4, $5, $6, NOW())
+            VALUES ($1, $2, $3, $4, $5, $6, $7,  NOW())
             RETURNING id
         `;
         const values = [
@@ -45,6 +47,7 @@ class Chofer {
             chofer.telefono,
             chofer.curp,
             chofer.matricula,
+            chofer.imagen_url,
         ];
 
         try {
@@ -52,6 +55,19 @@ class Chofer {
             console.log('Chofer creado con ID:', res.rows[0].id);
         } catch (error) {
             console.error('Error al crear el chofer:', error);
+        }
+    }
+
+    public static async subirImagen(imagenPath: string): Promise<string | null> {
+        try {
+            const result = await cloudinary.uploader.upload(imagenPath, {
+                folder: 'chofer',
+            });
+            console.log('Imagen subida a Cloudinary:', result.secure_url);
+            return result.secure_url;
+        } catch (error) {
+            console.error('Error al subir la imagen a Cloudinary:', error);
+            return null;
         }
     }
 

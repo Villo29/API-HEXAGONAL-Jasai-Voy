@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcrypt';
+import subirImagenCloudinary from '../../application/services/subirImagenCloudinary';
 import { publishEvent } from '../../../notifications/application/events/eventPublisher';
 
 export class driveController {
@@ -14,16 +15,26 @@ export class driveController {
         try {
             const { nombre, correo, contrasena, telefono, curp, matricula } = req.body;
             const correoExistente = await client.query(`SELECT * FROM choferes WHERE correo = $1`, [correo]);
+            const file = req.file;
             if (correoExistente.rows.length > 0) {
                 return res.status(400).json({ error: 'El correo ya está en uso.' });
             }
             const hashedPassword = await bcrypt.hash(contrasena, 10);
             const codigo_verificacion = crypto.randomBytes(3).toString('hex');
 
+            let imagenUrl = null;
+            if (file) {
+                try {
+                    imagenUrl = await subirImagenCloudinary(file.buffer, 'chofer');
+                } catch (error) {
+                    console.error('Error al subir la imagen a Cloudinary:', error);
+                    return res.status(500).json({ error: 'Error al subir la imagen.' });
+                }
+            }
             const result = await client.query(
-                `INSERT INTO choferes (nombre, correo, contrasena, telefono, curp, matricula, codigo_verificacion, fecha_creada)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING id`,
-                [nombre, correo, hashedPassword, telefono, curp, matricula, codigo_verificacion]
+                `INSERT INTO choferes (nombre, correo, contrasena, telefono, curp, matricula, codigo_verificacion, imagen_url, fecha_creada)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW()) RETURNING id`,
+                [nombre, correo, hashedPassword, telefono, curp, matricula, codigo_verificacion, imagenUrl]
             );
 
             const choferId = result.rows[0].id;
@@ -31,11 +42,11 @@ export class driveController {
 
             const eventData = {
                 type: "CHOFER_CREATED",
-                data: { nombre, correo, codigo_verificacion },
+                data: { nombre, correo, codigo_verificacion, imagenUrl },
             };
             await publishEvent("user_events", eventData);
 
-            res.status(201).send({ token, id: choferId });
+            res.status(201).send({ token, id: choferId, imagen_url: imagenUrl });
         } catch (error) {
             console.error('Error en crearChofer:', error);
             res.status(500).send({ error: 'Error al crear el chofer.', detalle: (error as any).message });

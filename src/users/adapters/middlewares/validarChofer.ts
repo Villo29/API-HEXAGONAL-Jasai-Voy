@@ -8,6 +8,7 @@ const schema = Joi.object({
     telefono: Joi.string().min(10).max(10).required(),
     curp: Joi.string().min(16).max(20).required(),
     matricula: Joi.string().min(10).max(15).required(),
+    imagen_url: Joi.any(),
 });
 
 export const validarChofer = (req: Request, res: Response, next: NextFunction) => {
