@@ -9,7 +9,7 @@ const choferController = new driveController();
 
 router.post('/', upload.single('imagenPath'), validarChofer, choferController.crearChofer);
 router.get('/:id', authMiddleware, choferController.obtenerChoferPorId);
-router.put('/:id',  validarChofer, choferController.actualizarChofer);
+router.put('/:id', authMiddleware, choferController.actualizarChofer);
 router.delete('/:id', authMiddleware, choferController.eliminarChofer);
 router.post('/login', choferController.loginChofer);
 router.post('/validar-usuario', choferController.verificarCodigo);
