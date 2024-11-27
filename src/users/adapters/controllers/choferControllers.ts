@@ -182,44 +182,51 @@ export class driveController {
         }
     };
 
-    obtenerDetallesDeViajes = async (req: Request, res: Response) => {
-        const { telefono } = req.body;
-
-        if (!telefono || typeof telefono !== 'string' || telefono.length !== 10) {
-            return res.status(400).json({ error: 'Debe proporcionar un número de teléfono válido de 10 dígitos.' });
-        }
+    obtenerDetallesViajes = async (req: Request, res: Response) => {
+        const { driverPhone } = req.body; // Obtener el número desde el cuerpo de la solicitud
 
         try {
-            const result = await client.query(`
+            // Verificar si se proporcionó el número de teléfono
+            if (!driverPhone) {
+                return res.status(400).json({ error: 'El número de teléfono del chofer es obligatorio.' });
+            }
+
+            // Ejecutar la consulta SQL
+            const result = await client.query(
+                `
                 SELECT
-                    rr.passenger_name,
+                    rr.passenger_id,
                     rr.start_latitude,
                     rr.start_longitude,
                     rr.destination_latitude,
-                    rr.destination_longitude
+                    rr.destination_longitude,
+                    ar.driver_phone,
+                    c.telefono
                 FROM
-                    ride_requests rr
+                    ride_requests AS rr
                 INNER JOIN
-                    choferes u
-                ON
-                    rr.phone_number = u.telefono
+                    accepted_rides AS ar ON rr.passenger_id = ar.passenger_id
+                INNER JOIN
+                    choferes AS c ON ar.driver_phone = c.telefono
                 WHERE
-                    rr.phone_number = $1
-                    AND u.telefono = $1
-                    AND LENGTH(rr.phone_number) = 10
-                    AND LENGTH(u.telefono) = 10;
-            `, [telefono]);
+                    ar.driver_phone = $1;
+                `,
+                [driverPhone]
+            );
 
+            // Validar si hay resultados
             if (result.rows.length === 0) {
-                return res.status(404).json({ message: 'No se encontraron registros para este número de teléfono.' });
+                return res.status(404).json({ error: 'No se encontraron viajes para este chofer.' });
             }
 
+            // Devolver los resultados
             res.status(200).json(result.rows);
         } catch (error) {
-            console.error('Error en obtenerDetallesDeViajes:', error);
-            res.status(500).json({ error: 'Error al obtener los detalles de los viajes.' });
+            console.error('Error en obtenerDetallesViajes:', error);
+            res.status(500).json({ error: 'Error al obtener los detalles de los viajes.', detalle: (error as any).message });
         }
     };
+
 
 
 }
@@ -230,4 +237,4 @@ export const verificarCodigo = driveController.prototype.verificarCodigo;
 export const obtenerChoferPorId = driveController.prototype.obtenerChoferPorId;
 export const actualizarChofer = driveController.prototype.actualizarChofer;
 export const eliminarChofer = driveController.prototype.eliminarChofer;
-export const obtenerDetallesDeViajes = driveController.prototype.obtenerDetallesDeViajes;
+export const obtenerDetallesViajes = driveController.prototype.obtenerDetallesViajes;
