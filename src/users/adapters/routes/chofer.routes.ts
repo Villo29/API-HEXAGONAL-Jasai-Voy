@@ -13,6 +13,6 @@ router.put('/:id', authMiddleware, choferController.actualizarChofer);
 router.delete('/:id', authMiddleware, choferController.eliminarChofer);
 router.post('/login', choferController.loginChofer);
 router.post('/validar-usuario', choferController.verificarCodigo);
-
+router.post('/viajes', choferController.obtenerDetallesDeViajes);
 
 export default router;

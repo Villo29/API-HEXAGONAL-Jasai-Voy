@@ -8,7 +8,7 @@ import subirImagenCloudinary from '../../application/services/subirImagenCloudin
 import { publishEvent } from '../../../notifications/application/events/eventPublisher';
 
 export class driveController {
-    constructor() {}
+    constructor() { }
 
     // Crear un nuevo chofer
     crearChofer = async (req: Request, res: Response) => {
@@ -181,6 +181,47 @@ export class driveController {
             res.status(500).send(error);
         }
     };
+
+    obtenerDetallesDeViajes = async (req: Request, res: Response) => {
+        const { telefono } = req.body;
+
+        if (!telefono || typeof telefono !== 'string' || telefono.length !== 10) {
+            return res.status(400).json({ error: 'Debe proporcionar un número de teléfono válido de 10 dígitos.' });
+        }
+
+        try {
+            const result = await client.query(`
+                SELECT
+                    rr.passenger_name,
+                    rr.start_latitude,
+                    rr.start_longitude,
+                    rr.destination_latitude,
+                    rr.destination_longitude
+                FROM
+                    ride_requests rr
+                INNER JOIN
+                    choferes u
+                ON
+                    rr.phone_number = u.telefono
+                WHERE
+                    rr.phone_number = $1
+                    AND u.telefono = $1
+                    AND LENGTH(rr.phone_number) = 10
+                    AND LENGTH(u.telefono) = 10;
+            `, [telefono]);
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({ message: 'No se encontraron registros para este número de teléfono.' });
+            }
+
+            res.status(200).json(result.rows);
+        } catch (error) {
+            console.error('Error en obtenerDetallesDeViajes:', error);
+            res.status(500).json({ error: 'Error al obtener los detalles de los viajes.' });
+        }
+    };
+
+
 }
 
 export const crearChofer = driveController.prototype.crearChofer;
@@ -189,3 +230,4 @@ export const verificarCodigo = driveController.prototype.verificarCodigo;
 export const obtenerChoferPorId = driveController.prototype.obtenerChoferPorId;
 export const actualizarChofer = driveController.prototype.actualizarChofer;
 export const eliminarChofer = driveController.prototype.eliminarChofer;
+export const obtenerDetallesDeViajes = driveController.prototype.obtenerDetallesDeViajes;
