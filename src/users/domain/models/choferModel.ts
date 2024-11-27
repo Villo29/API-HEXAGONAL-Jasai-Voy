@@ -89,7 +89,7 @@ class Chofer {
     public static async actualizar(id: number, datos: Partial<IChofer>): Promise<void> {
         const fields = Object.keys(datos).map((key, index) => `${key} = $${index + 2}`).join(', ');
         const values = [id, ...Object.values(datos)];
-        const query = `UPDATE usuarios SET ${fields} WHERE id = $1`;
+        const query = `UPDATE choferes SET ${fields} WHERE id = $1`;
         try {
             await client.query(query, values);
             console.log(`Usuario con ID ${id} actualizado correctamente.`);
