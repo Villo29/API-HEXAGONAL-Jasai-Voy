@@ -13,6 +13,7 @@ router.put('/:id', authMiddleware, userController.actualizarUsuario);
 router.delete('/:id', authMiddleware, userController.eliminarUsuario);
 router.post('/login', userController.loginUsuario);
 router.post('/validar-usuario', userController.verificarCodigo);
+router.post('/viajes', userController.obtenerDetallesDeViajes);
 
 export default router;
 

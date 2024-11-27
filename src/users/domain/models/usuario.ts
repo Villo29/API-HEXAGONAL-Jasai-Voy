@@ -77,6 +77,36 @@ class Usuario {
             console.error('Error al actualizar el usuario:', error);
         }
     }
+
+    public static async obtenerRideRequests(): Promise<any[]> {
+        const query = `
+            SELECT
+                rr.passenger_name,
+                rr.start_latitude,
+                rr.start_longitude,
+                rr.destination_latitude,
+                rr.destination_longitude
+            FROM
+                ride_requests rr
+            INNER JOIN
+                usuarios u
+            ON
+                rr.phone_number = u.telefono
+            WHERE
+                LENGTH(rr.phone_number) = 10
+                AND LENGTH(u.telefono) = 10
+        `;
+
+        try {
+            const res = await client.query(query);
+            console.log('Ride requests obtenidas:', res.rows);
+            return res.rows;
+        } catch (error) {
+            console.error('Error al obtener ride requests:', error);
+            throw error;
+        }
+    }
+
 }
 
 export default Usuario;
