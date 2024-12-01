@@ -25,6 +25,9 @@ const apiLimiter = rateLimit({
     message: 'Demasiadas peticiones desde esta IP, por favor intenta nuevamente después de 15 minutos.'
 });
 
+app.use(express.json());
+app.use(cors());
+app.use('/api', apiLimiter, routes);
 
 import http from 'http';
 http.createServer((req, res) => {
@@ -45,11 +48,6 @@ https.createServer(httpsOptions, app).listen(httpsPort, () => {
     console.log(`Servidor HTTPS corriendo en el puerto ${httpsPort}`);
 });
 
-
-
-app.use(express.json());
-app.use(cors());
-app.use('/api', apiLimiter, routes);
 
 app.use('/', (req, res) => {
     res.send('hola mundo');

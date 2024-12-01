@@ -26,6 +26,11 @@ const apiLimiter = rateLimit({
 });
 
 
+app.use(express.json());
+app.use(cors());
+app.use('/api', apiLimiter, routes);
+
+
 import http from 'http';
 http.createServer((req, res) => {
     res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
@@ -46,9 +51,6 @@ https.createServer(httpsOptions, app).listen(httpsPort, () => {
 });
 
 
-app.use(express.json());
-app.use(cors());
-app.use('/api', apiLimiter, routes);
 
 
 app.listen(port, () => {
