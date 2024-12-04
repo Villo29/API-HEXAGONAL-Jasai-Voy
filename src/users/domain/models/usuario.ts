@@ -1,6 +1,6 @@
 import { Client } from 'pg';
 import dotenv from 'dotenv';
-import cloudinary from '../../application/services/cloudinary'; // Importa la configuración de Cloudinary
+import cloudinary from '../../application/services/cloudinary';
 dotenv.config();
 
 export const client = new Client({
@@ -16,7 +16,7 @@ export const client = new Client({
 
 client.connect()
     .then(() => console.log('Conectado a la base de datos PostgreSQL exitosamente.'))
-    .catch((error) => console.error('Error al conectar a la base de datos PostgreSQL:', error));
+    .catch((error) => console.error('Error al conectar a la base de datos PostgreSQL:',));
 
 export interface IUsuario {
     id?: number;
@@ -49,7 +49,7 @@ class Usuario {
             const res = await client.query(query, values);
             console.log('Usuario creado con ID:', res.rows[0].id);
         } catch (error) {
-            console.error('Error al crear el usuario:', error);
+            console.error('Error al crear el usuario:');
         }
     }
 
@@ -61,7 +61,7 @@ class Usuario {
             console.log('Imagen subida a Cloudinary:', result.secure_url);
             return result.secure_url;
         } catch (error) {
-            console.error('Error al subir la imagen a Cloudinary:', error);
+            console.error('Error al subir la imagen a Cloudinary:');
             return null;
         }
     }
@@ -74,7 +74,7 @@ class Usuario {
             await client.query(query, values);
             console.log(`Usuario con ID ${id} actualizado correctamente.`);
         } catch (error) {
-            console.error('Error al actualizar el usuario:', error);
+            console.error('Error al actualizar el usuario:',);
         }
     }
 
@@ -102,7 +102,7 @@ class Usuario {
             console.log('Ride requests obtenidas:', res.rows);
             return res.rows;
         } catch (error) {
-            console.error('Error al obtener ride requests:', error);
+            console.error('Error al obtener ride requests:');
             throw error;
         }
     }

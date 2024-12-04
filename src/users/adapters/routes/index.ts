@@ -5,7 +5,6 @@ import choferRoutes from './chofer.routes'
 
 const router = express.Router();
 
-// Prefijo de versión
 const apiVersion = '/v1';
 
 

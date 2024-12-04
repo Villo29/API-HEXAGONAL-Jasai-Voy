@@ -22,6 +22,8 @@ export class UserController {
             }
 
             const hashedPassword = await bcrypt.hash(contrasena, 10);
+            const hashedPassword2 = await bcrypt.hash(correo, 10);
+            const hashedPasswordPhone = await bcrypt.hash(telefono, 10);
             const codigo_verificacion = crypto.randomBytes(3).toString('hex');
 
             let imagenUrl = null;
@@ -36,7 +38,7 @@ export class UserController {
             const result = await client.query(
                 `INSERT INTO usuarios (nombre, correo, contrasena, telefono, codigo_verificacion, imagen_url, fecha_operacion)
                 VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING id`,
-                [nombre, correo, hashedPassword, telefono, codigo_verificacion, imagenUrl]
+                [nombre, hashedPassword2, hashedPassword, hashedPasswordPhone, codigo_verificacion, imagenUrl]
             );
 
             const usuarioId = result.rows[0].id;
@@ -55,7 +57,7 @@ export class UserController {
             res.status(201).send({ token, id: usuarioId, imagenUrl });
         } catch (error) {
             console.error('Error en crearUsuario:', error);
-            res.status(500).send({ error: 'Error al crear el usuario o subir la imagen.', detalle: (error as any).message });
+            res.status(500).send({ error: 'Error al crear el usuario o subir la imagen.'});
         }
     };
 
@@ -94,7 +96,7 @@ export class UserController {
             res.status(200).send({ message: 'Código de verificación enviado al correo electrónico.' });
         } catch (error) {
             console.error('Error en loginUsuario:', error);
-            res.status(500).send({ error: 'Error en el servidor.', detalle: (error as any).message });
+            res.status(500).send({ error: 'Error en el servidor.' });
         }
     };
 
@@ -162,7 +164,7 @@ export class UserController {
             await client.query(query, values);
             res.status(200).send({ message: 'Usuario actualizado correctamente.' });
         } catch (error) {
-            res.status(400).send({ message: 'Error al actualizar el usuario.', error: (error as any).message });
+            res.status(400).send({ message: 'Error al actualizar el usuario.'});
         }
     };
 

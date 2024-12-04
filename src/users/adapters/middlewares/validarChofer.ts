@@ -14,7 +14,11 @@ const schema = Joi.object({
 export const validarChofer = (req: Request, res: Response, next: NextFunction) => {
     const { error } = schema.validate(req.body);
     if (error) {
-        return res.status(400).send({ error: error.details[0].message });
+        return res.status(400).send({
+            error: "Validation Error",
+            message: error.details[0].message,
+            field: error.details[0].context?.key
+        });
     }
     next();
 };

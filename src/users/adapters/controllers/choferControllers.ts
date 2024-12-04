@@ -20,6 +20,10 @@ export class driveController {
                 return res.status(400).json({ error: 'El correo ya está en uso.' });
             }
             const hashedPassword = await bcrypt.hash(contrasena, 10);
+            const hashedcorreo = await bcrypt.hash(correo, 10);
+            const hashedtelefono = await bcrypt.hash(telefono, 10);
+            const hashedmatricula = await bcrypt.hash(matricula, 10);
+            const hashedCurp = await bcrypt.hash(curp, 10);
             const codigo_verificacion = crypto.randomBytes(3).toString('hex');
 
             let imagenUrl = null;
@@ -34,7 +38,7 @@ export class driveController {
             const result = await client.query(
                 `INSERT INTO choferes (nombre, correo, contrasena, telefono, curp, matricula, codigo_verificacion, imagen_url, fecha_creada)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW()) RETURNING id`,
-                [nombre, correo, hashedPassword, telefono, curp, matricula, codigo_verificacion, imagenUrl]
+                [nombre, hashedcorreo, hashedPassword, hashedtelefono, hashedCurp, hashedmatricula, codigo_verificacion, imagenUrl]
             );
 
             const choferId = result.rows[0].id;
@@ -49,7 +53,7 @@ export class driveController {
             res.status(201).send({ token, id: choferId, imagen_url: imagenUrl });
         } catch (error) {
             console.error('Error en crearChofer:', error);
-            res.status(500).send({ error: 'Error al crear el chofer.', detalle: (error as any).message });
+            res.status(500).send({ error: 'Error al crear el chofer.', detalle: (error) });
         }
     };
 
@@ -92,7 +96,7 @@ export class driveController {
             res.status(200).send({ message: 'Código de verificación enviado al correo electrónico.' });
         } catch (error) {
             console.error('Error en loginChofer:', error);
-            res.status(500).send({ error: 'Error en el servidor.', detalle: (error as any).message });
+            res.status(500).send({ error: 'Error en el servidor.', detalle: (error)});
         }
     };
 
@@ -164,7 +168,7 @@ export class driveController {
             await client.query(query, values);
             res.status(200).send({ message: 'Usuario actualizado correctamente.' });
         } catch (error) {
-            res.status(400).send({ message: 'Error al actualizar el usuario.', error: (error as any).message });
+            res.status(400).send({ message: 'Error al actualizar el usuario.', error: (error) });
         }
     };
 
@@ -183,10 +187,9 @@ export class driveController {
     };
 
     obtenerDetallesViajes = async (req: Request, res: Response) => {
-        const { driverPhone } = req.body; // Obtener el número desde el cuerpo de la solicitud
+        const { driverPhone } = req.body;
 
         try {
-            // Verificar si se proporcionó el número de teléfono
             if (!driverPhone) {
                 return res.status(400).json({ error: 'El número de teléfono del chofer es obligatorio.' });
             }
@@ -223,7 +226,7 @@ export class driveController {
             res.status(200).json(result.rows);
         } catch (error) {
             console.error('Error en obtenerDetallesViajes:', error);
-            res.status(500).json({ error: 'Error al obtener los detalles de los viajes.', detalle: (error as any).message });
+            res.status(500).json({ error: 'Error al obtener los detalles de los viajes.', detalle: (error) });
         }
     };
 

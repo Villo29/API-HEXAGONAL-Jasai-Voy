@@ -1,6 +1,6 @@
 import { Client } from 'pg';
 import dotenv from 'dotenv';
-import cloudinary from '../../application/services/cloudinary'; // Importa la configuración de Cloudinary
+import cloudinary from '../../application/services/cloudinary';
 dotenv.config();
 
 export const client = new Client({
@@ -16,7 +16,7 @@ export const client = new Client({
 
 client.connect()
     .then(() => console.log('Conectado a la base de datos PostgreSQL exitosamente.'))
-    .catch((error) => console.error('Error al conectar a la base de datos PostgreSQL:', error));
+    .catch((error) => console.error('Error al conectar a la base de datos PostgreSQL:'));
 
 // Interfaz para el modelo Chofer
 export interface IChofer {
@@ -54,7 +54,7 @@ class Chofer {
             const res = await client.query(query, values);
             console.log('Chofer creado con ID:', res.rows[0].id);
         } catch (error) {
-            console.error('Error al crear el chofer:', error);
+            console.error('Error al crear el chofer:');
         }
     }
 
@@ -66,7 +66,7 @@ class Chofer {
             console.log('Imagen subida a Cloudinary:', result.secure_url);
             return result.secure_url;
         } catch (error) {
-            console.error('Error al subir la imagen a Cloudinary:', error);
+            console.error('Error al subir la imagen a Cloudinary:');
             return null;
         }
     }
@@ -80,7 +80,7 @@ class Chofer {
             const res = await client.query(query, values);
             return res.rows[0] || null;
         } catch (error) {
-            console.error('Error al obtener el chofer:', error);
+            console.error('Error al obtener el chofer:');
             return null;
         }
     }
@@ -94,7 +94,7 @@ class Chofer {
             await client.query(query, values);
             console.log(`Usuario con ID ${id} actualizado correctamente.`);
         } catch (error) {
-            console.error('Error al actualizar el usuario:', error);
+            console.error('Error al actualizar el usuario:');
         }
     }
 
@@ -106,7 +106,7 @@ class Chofer {
             await client.query(query, values);
             console.log(`Chofer con ID ${id} eliminado correctamente.`);
         } catch (error) {
-            console.error('Error al eliminar el chofer:', error);
+            console.error('Error al eliminar el chofer:');
         }
     }
 }
