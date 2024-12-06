@@ -6,6 +6,9 @@ import nodemailer from 'nodemailer';
 import bcrypt from 'bcrypt';
 import subirImagenCloudinary from '../../application/services/subirImagenCloudinary';
 import { publishEvent } from '../../../notifications/application/events/eventPublisher';
+import logger from "../middlewares/loggerMiddleware";
+
+
 
 
 export class UserController {
@@ -13,11 +16,13 @@ export class UserController {
 
     crearUsuario = async (req: Request, res: Response) => {
         try {
+            logger.info('Creating a new user');
             const { nombre, correo, contrasena, telefono } = req.body;
             const file = req.file;
 
             const correoExistente = await client.query(`SELECT * FROM usuarios WHERE correo = $1`, [correo]);
             if (correoExistente.rows.length > 0) {
+                logger.warn('Attempt to create a user with an existing email');
                 return res.status(400).json({ error: 'El correo ya está en uso.' });
             }
 
@@ -29,6 +34,7 @@ export class UserController {
             let imagenUrl = null;
             if (file) {
                 try {
+                    logger.info('Uploading user image to Cloudinary');
                     imagenUrl = await subirImagenCloudinary(file.buffer, 'usuarios');
                 } catch (error) {
                     console.error('Error al subir la imagen a Cloudinary:', error);
@@ -54,19 +60,30 @@ export class UserController {
             };
             await publishEvent("user_events", eventData);
 
+            logger.info(`User created successfully with ID: ${usuarioId}`);
             res.status(201).send({ token, id: usuarioId, imagenUrl });
         } catch (error) {
-            console.error('Error en crearUsuario:', error);
-            res.status(500).send({ error: 'Error al crear el usuario o subir la imagen.'});
+            logger.error('Error in crearUsuario: ', error);
+            res.status(500).send({ error: 'Error al crear el usuario o subir la imagen.' });
         }
     };
 
     loginUsuario = async (req: Request, res: Response) => {
         try {
+            logger.info('Login user');
             const { correo, contrasena } = req.body;
-            const result = await client.query(`SELECT * FROM usuarios WHERE correo = $1`, [correo]);
-            const usuario = result.rows[0];
+            const result = await client.query(`SELECT * FROM usuarios`);
+            const usuarios = result.rows;
+            // Compara el correo con los hashes almacenados
+            let usuario = null;
+            for (const u of usuarios) {
+                if (await bcrypt.compare(correo, u.correo)) {
+                    usuario = u;
+                    break;
+                }
+            }
             if (!usuario || !(await bcrypt.compare(contrasena, usuario.contrasena))) {
+                logger.warn('Invalid credentials');
                 return res.status(401).send({ error: 'Credenciales no válidas.' });
             }
             const codigoVerificacion = crypto.randomBytes(3).toString('hex');
@@ -78,10 +95,9 @@ export class UserController {
                     pass: process.env.GMAIL_APP_PASSWORD,
                 },
             });
-
             const mailOptions = {
                 from: process.env.EMAIL_USER,
-                to: usuario.correo,
+                to: correo,
                 subject: 'Código de verificación',
                 html: `<div style="text-align: center; font-family: Arial, sans-serif;">
                     <h1>¡Hola ${usuario.nombre}!</h1>
@@ -92,23 +108,27 @@ export class UserController {
                 </div>`,
             };
             await transporter.sendMail(mailOptions);
-
+            logger.warn('Verification code sent to user email');
             res.status(200).send({ message: 'Código de verificación enviado al correo electrónico.' });
         } catch (error) {
-            console.error('Error en loginUsuario:', error);
+            logger.warn('Error in loginUsuario: ', error);
             res.status(500).send({ error: 'Error en el servidor.' });
         }
     };
 
+
     verificarCodigo = async (req: Request, res: Response) => {
         try {
+            logger.warn('Verifying code');
             const { correo, codigoVerificacion } = req.body;
             const result = await client.query(`SELECT * FROM usuarios WHERE correo = $1`, [correo]);
             const usuario = result.rows[0];
             if (!usuario) {
+                logger.warn('User not found');
                 return res.status(404).send({ error: 'Usuario no encontrado.' });
             }
             if (usuario.codigo_verificacion !== codigoVerificacion.trim()) {
+                logger.warn('Invalid verification code');
                 return res.status(401).send({ error: 'Código de verificación no válido.' });
             }
             const token = jwt.sign({ _id: usuario.id }, process.env.JWT_SECRET || 'your_secret_key');
@@ -164,7 +184,7 @@ export class UserController {
             await client.query(query, values);
             res.status(200).send({ message: 'Usuario actualizado correctamente.' });
         } catch (error) {
-            res.status(400).send({ message: 'Error al actualizar el usuario.'});
+            res.status(400).send({ message: 'Error al actualizar el usuario.' });
         }
     };
 
